@@ -44,9 +44,9 @@ hid_handle_control(struct usb_ctrl_req_t *req, void *data)
 	case USB_CTRL_REQ_GET_DESCRIPTOR:
 		usb_ep0_tx_cp(ctx->report, ctx->report_size, req->wLength, NULL, NULL);
 		usb_handle_control_status(0);
-		return (0);
-	default:
 		return (1);
+	default:
+		return (0);
 	}
 }
 
