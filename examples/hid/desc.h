@@ -22,7 +22,7 @@ struct usb_config_hid {
 	struct hid_function_desc usb_function_0;
 } __packed;
 
-static const struct hid_descriptor_t hid_descriptor = {
+static struct hid_descriptor_t hid_descriptor = {
 	.report_size = 0x32,
 	.report = (uint8_t []){
 		// Mouse example pg. 71
