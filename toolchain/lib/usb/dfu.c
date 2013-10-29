@@ -65,6 +65,9 @@ dfu_reset_system(void *buf, ssize_t len, void *cbdata)
 static int
 dfu_handle_control(struct usb_ctrl_req_t *req, void *data)
 {
+        if (req->type != USB_CTRL_REQ_CLASS)
+                return (0); // handle only class specific requests
+
         struct dfu_ctx *ctx = data;
         int fail = 1;
 
