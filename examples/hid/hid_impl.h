@@ -1,33 +1,50 @@
 #ifndef _USB_HID_H
 #define _USB_HID_H
 
-#define USB_FUNCTION_HID_IFACE_COUNT 1
+enum hid_report_descriptor_type {
+	USB_HID_REPORT_DESC_TYPE_HID = 0x21,
+	USB_HID_REPORT_DESC_TYPE_REPORT = 0x22,
+	USB_HID_REPORT_DESC_TYPE_PHYSICAL = 0x23
+};
 
-#define HID_TX_SIZE 64
+enum hid_report_type {
+	USB_HID_REPORT_TYPE_INPUT = 0x01,
+	USB_HID_REPORT_TYPE_OUTPUT = 0x02,
+	USB_HID_REPORT_TYPE_FEATURE = 0x03
+};
 
-typedef int (*hid_report_input_t)(uint8_t report_id, void *data_out, size_t data_size);
-typedef int (*hid_report_output_t)(uint8_t report_id, void *data_in, size_t data_size);
+enum hid_protocol_t {
+	USB_HID_PROTOCOL_BOOT = 0x0,
+	USB_HID_PROTOCOL_REPORT = 0x1
+};
 
-struct hid_descriptor_t {
-	uint16_t report_size;
-	uint8_t *report;
-	hid_report_input_t report_input;
-	hid_report_output_t report_output;
+/* standard requests */
+typedef void (*hid_set_report_descriptor_t)(enum hid_report_descriptor_type type, uint8_t index, const void *data_in, const size_t data_len);
+typedef size_t (*hid_get_report_descriptor_t)(enum hid_report_descriptor_type type, uint8_t index, void **data_out);
+/* class specific requests */
+typedef void (*hid_set_report_t)(enum hid_report_type type, uint8_t report_id, const void *data_in, const size_t data_len);
+typedef size_t (*hid_get_report_t)(enum hid_report_type type, uint8_t report_id, void **data_out);
+typedef void (*hid_set_idle_t)(uint8_t duration, uint8_t report_id);
+typedef uint8_t (*hid_get_idle_t)(uint8_t report_id);
+typedef void (*hid_set_protocol_t)(enum hid_protocol_t protocol);
+typedef enum hid_protocol_t (*hid_get_protocol_t)();
+
+struct hid_user_functions_t {
+	hid_get_report_descriptor_t get_descriptor; // REQUIRED
+	hid_set_report_t set_report;
+	hid_get_report_t get_report; // REQUIRED
+	hid_set_idle_t set_idle;
+	hid_get_idle_t get_idle;
+	hid_set_protocol_t set_protocol;
+	hid_get_protocol_t get_protocol;
 };
 
 struct hid_ctx {
-	/* inputs */
-	uint16_t report_size;
-	uint8_t *report;
-	hid_report_input_t report_input;
-	hid_report_output_t report_output;
-	/* state */
 	struct usbd_function_ctx_header header;
-	uint8_t idle_rate;
 	struct usbd_ep_pipe_state_t *tx_pipe;
-	struct usbd_ep_pipe_state_t *rx_pipe;
+	struct hid_user_functions_t *user_functions;
 };
 
-void hid_init(const struct hid_descriptor_t *hid_desc, struct hid_ctx *ctx);
+void hid_init(struct hid_user_functions_t *, struct hid_ctx *);
 
 #endif
