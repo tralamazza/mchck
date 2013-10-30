@@ -58,7 +58,7 @@ hid_handle_control_class(struct usb_ctrl_req_t *req, struct hid_ctx *ctx)
 		if (!ctx->user_functions->set_idle)
 			return (0);
 		ctx->user_functions->set_idle(req->wValueHigh, req->wValueLow);
-		return (1);
+		return (0);
 
 	case USB_CTRL_REQ_HID_SET_PROTOCOL:
 		if (!ctx->user_functions->set_protocol)
@@ -103,6 +103,18 @@ hid_handle_control(struct usb_ctrl_req_t *req, void *data)
 	}
 }
 
+// TODO param this
+#define HID_TX_SIZE 8
+
+static void
+hid_tx_done(void *buf, ssize_t len, void *data)
+{
+	struct hid_ctx *ctx = data;
+	if (!ctx->tx_cb)
+		return;
+	ctx->tx_cb(buf, len);
+}
+
 const struct usbd_function hid_function = {
 	.control = hid_handle_control,
 	.interface_count = USB_FUNCTION_HID_IFACE_COUNT
@@ -113,5 +125,12 @@ hid_init(struct hid_user_functions_t *user_functions, struct hid_ctx *ctx)
 {
 	usb_attach_function(&hid_function, &ctx->header);
 	ctx->user_functions = user_functions;
-	ctx->tx_pipe = usb_init_ep(&ctx->header, 1, USB_EP_TX, 8);
+	ctx->tx_pipe = usb_init_ep(&ctx->header, 1, USB_EP_TX, HID_TX_SIZE);
+}
+
+void
+hid_send_data(struct hid_ctx *ctx, void *data, size_t len, hid_send_data_cb_t cb)
+{
+	ctx->tx_cb = cb;
+	usb_tx(ctx->tx_pipe, data, len, HID_TX_SIZE, hid_tx_done, ctx);
 }
