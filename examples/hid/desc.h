@@ -53,6 +53,24 @@ static uint8_t report_desc[REPORT_DESC_SIZE] = {
 	0xC0
 };
 
+struct mouse_data_t {
+	uint8_t btn1 : 1;
+	uint8_t btn2 : 1;
+	uint8_t btn3 : 1;
+	uint8_t pad : 5;
+	char x;
+	char y;
+} __packed;
+
+static struct mouse_data_t mouse_data = {
+	.btn1 = 0,
+	.btn2 = 0,
+	.btn3 = 0,
+	.pad = 0,
+	.x = 20,
+	.y = 0
+};
+
 static const struct usb_config_hid hid_desc_config = {
 	.config = {
 		.bLength = sizeof(struct usb_desc_config_t),
