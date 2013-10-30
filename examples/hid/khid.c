@@ -24,7 +24,7 @@ hid_get_report(enum hid_report_type type, uint8_t report_id, void **data_out)
 	if (type != USB_HID_REPORT_TYPE_INPUT)
 		return (0);
 	*data_out = &mouse_data;
-	return (3);
+	return (sizeof(struct mouse_data_t));
 }
 
 static void
