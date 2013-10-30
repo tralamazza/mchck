@@ -19,16 +19,19 @@ enum hid_protocol_t {
 };
 
 /* standard requests */
-typedef void (*hid_set_report_descriptor_t)(enum hid_report_descriptor_type type, uint8_t index, const void *data_in, const size_t data_len);
+typedef void (*hid_set_report_descriptor_t)(const enum hid_report_descriptor_type type, const uint8_t index, const void *data_in, const size_t data_len);
 typedef size_t (*hid_get_report_descriptor_t)(enum hid_report_descriptor_type type, uint8_t index, void **data_out);
 /* class specific requests */
-typedef void (*hid_set_report_t)(enum hid_report_type type, uint8_t report_id, const void *data_in, const size_t data_len);
+typedef void (*hid_set_report_t)(const enum hid_report_type type, const uint8_t report_id, const void *data_in, const size_t data_len);
 typedef size_t (*hid_get_report_t)(enum hid_report_type type, uint8_t report_id, void **data_out);
-typedef void (*hid_set_idle_t)(uint8_t duration, uint8_t report_id);
+typedef void (*hid_set_idle_t)(const uint8_t duration, const uint8_t report_id);
 typedef uint8_t (*hid_get_idle_t)(uint8_t report_id);
-typedef void (*hid_set_protocol_t)(enum hid_protocol_t protocol);
+typedef void (*hid_set_protocol_t)(const enum hid_protocol_t protocol);
 typedef enum hid_protocol_t (*hid_get_protocol_t)();
+/* interrupt in callback */
+typedef void (*hid_send_data_cb_t)(void *buf, ssize_t len);
 
+// TODO rename this struct
 struct hid_user_functions_t {
 	hid_get_report_descriptor_t get_descriptor; // REQUIRED
 	hid_set_report_t set_report;
@@ -41,10 +44,12 @@ struct hid_user_functions_t {
 
 struct hid_ctx {
 	struct usbd_function_ctx_header header;
-	struct usbd_ep_pipe_state_t *tx_pipe;
 	struct hid_user_functions_t *user_functions;
+	struct usbd_ep_pipe_state_t *tx_pipe;
+	hid_send_data_cb_t tx_cb;
 };
 
 void hid_init(struct hid_user_functions_t *, struct hid_ctx *);
+void hid_send_data(struct hid_ctx *, void *, size_t, hid_send_data_cb_t);
 
 #endif
