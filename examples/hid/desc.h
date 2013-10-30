@@ -22,6 +22,8 @@ struct usb_config_hid {
 	struct hid_function_desc usb_function_0;
 } __packed;
 
+#define MOUSE_TX_SIZE 8
+
 // Mouse example pg. 71
 #define REPORT_DESC_SIZE 50
 static uint8_t report_desc[REPORT_DESC_SIZE] = {
@@ -109,7 +111,7 @@ static const struct usb_config_hid hid_desc_config = {
 			.ep_num = 1,
 			.in = 1,
 			.type = USB_EP_INTR,
-			.wMaxPacketSize = 8,
+			.wMaxPacketSize = MOUSE_TX_SIZE,
 			.bInterval = 0xA
 		}
 	}
