@@ -50,6 +50,6 @@ struct hid_ctx {
 };
 
 void hid_init(struct hid_user_functions_t *, struct hid_ctx *);
-void hid_send_data(struct hid_ctx *, void *, size_t, hid_send_data_cb_t);
+void hid_send_data(struct hid_ctx *, void *, size_t, size_t, hid_send_data_cb_t);
 
 #endif
