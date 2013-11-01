@@ -1,7 +1,7 @@
 PROG=	hid
 
 ifndef VUSB
-SRCS+=	khid.c
+SRCS+=	hid_joy.c
 else
 TARGET=	host
 SRCS+=	vhid.c
