@@ -129,6 +129,23 @@ hid_send_data(struct hid_ctx *ctx, void *data, size_t len, size_t tx_size, hid_s
 {
 	ctx->tx_cb = cb;
 	if (!ctx->tx_pipe)
-		ctx->tx_pipe = usb_init_ep(&ctx->header, 1, USB_EP_TX, tx_size);
+		ctx->tx_pipe = usb_init_ep(&ctx->header, 1, USB_EP_TX, tx_size); // TODO pass interface num
 	usb_tx(ctx->tx_pipe, data, len, tx_size, hid_tx_done, ctx);
+}
+
+static void
+hid_rx_done(void *buf, ssize_t len, void *data)
+{
+	struct hid_ctx *ctx = data;
+	if (ctx->rx_cb)
+		ctx->rx_cb(buf, len);
+}
+
+void
+hid_recv_data(struct hid_ctx *ctx, void **data_in, size_t rx_size, hid_recv_data_cb_t cb)
+{
+	ctx->rx_cb = cb;
+	if (!ctx->rx_pipe)
+		ctx->rx_pipe = usb_init_ep(&ctx->header, 2, USB_EP_RX, rx_size); // TODO pass interface num
+	usb_rx(ctx->rx_pipe, *data_in, rx_size, hid_rx_done, ctx);
 }
