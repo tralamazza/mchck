@@ -47,25 +47,27 @@ buttons_poll()
 	joystick_data.cross_btn = !gpio_read(GPIO_PTD1);
 	joystick_data.circle_btn = !gpio_read(GPIO_PTD2);
 	joystick_data.triangle_btn = !gpio_read(GPIO_PTD3);
-	joystick_data.l1_btn = !gpio_read(GPIO_PTD4);
-	joystick_data.r1_btn = !gpio_read(GPIO_PTD5);
-	joystick_data.l2_btn = !gpio_read(GPIO_PTD6);
-	joystick_data.r2_btn = !gpio_read(GPIO_PTD7);
+	joystick_data.l1_btn = !gpio_read(GPIO_PTC4);
+	joystick_data.r1_btn = !gpio_read(GPIO_PTC5);
+	joystick_data.l2_btn = !gpio_read(GPIO_PTC6);
+	joystick_data.r2_btn = !gpio_read(GPIO_PTC7);
 	joystick_data.select_btn = !gpio_read(GPIO_PTA1);
 	joystick_data.start_btn = !gpio_read(GPIO_PTA2);
 	joystick_data.l3_btn = !gpio_read(GPIO_PTA4);
 	joystick_data.r3_btn = !gpio_read(GPIO_PTA18);
 	joystick_data.ps_btn = !gpio_read(GPIO_PTA19);
 	// axis
-	joystick_data.left_y = !gpio_read(GPIO_PTC4) ? 127 : (!gpio_read(GPIO_PTC6) ? -127 : 0);
-	joystick_data.left_x = !gpio_read(GPIO_PTC5) ? 127 : (!gpio_read(GPIO_PTC7) ? -127 : 0);
+	joystick_data.left_y = !gpio_read(GPIO_PTD4) ? 127 : (!gpio_read(GPIO_PTD6) ? -127 : 0);
+	joystick_data.left_x = !gpio_read(GPIO_PTD5) ? 127 : (!gpio_read(GPIO_PTD7) ? -127 : 0);
 }
 
 #define BUTTON_SETUP(pin)																	\
 	gpio_dir(pin, GPIO_INPUT);																\
 	pin_mode(pin, PIN_MODE_PULLUP);															\
 
-	// pin_physport_from_pin(pin)->pcr[pin_physpin_from_pin(pin)].irqc = PCR_IRQC_INT_FALLING;
+#define BUTTON_DEBOUNCE(pin, clk)                       \
+    pin_physport_from_pin(pin)->dfcr.cs = PORT_CS_LPO;  \
+    pin_physport_from_pin(pin)->dfwr.filt = clk;        \
 
 static void
 buttons_init()
@@ -87,6 +89,12 @@ buttons_init()
 	BUTTON_SETUP(PIN_PTC5);
 	BUTTON_SETUP(PIN_PTC6);
 	BUTTON_SETUP(PIN_PTC7);
+
+    /* tests showed up to 3ms of "bouncyness" on the JLF-TP-8 */
+    BUTTON_DEBOUNCE(PIN_PTD7, 1);
+    BUTTON_DEBOUNCE(PIN_PTD6, 1);
+    BUTTON_DEBOUNCE(PIN_PTD5, 1);
+    BUTTON_DEBOUNCE(PIN_PTD4, 1);
 }
 
 static void
