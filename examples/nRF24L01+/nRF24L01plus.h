@@ -213,6 +213,6 @@ enum NRF_REG_ADDR {
 	NRF_REG_ADDR_FIFO_STATUS = 0x17,
 	NRF_REG_ADDR_DYNPD = 0x1c,
 	NRF_REG_ADDR_FEATURE = 0x1d
-}
+};
 
 void nrf_init();
