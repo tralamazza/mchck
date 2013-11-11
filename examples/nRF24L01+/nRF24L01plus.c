@@ -11,6 +11,14 @@ enum {
 	NRF_IRQ  = PIN_PTC4
 };
 
+enum {
+	NRF_CE_TX = 0,
+	NRF_CE_RX = 1
+};
+
+static nrf_data_available *data_available;
+static nrf_data_sent *data_sent;
+
 void
 read_register(enum NRF_REG_ADDR reg, void *data, uint16_t len, spi_cb *cb)
 {
@@ -34,6 +42,22 @@ write_register(enum NRF_REG_ADDR reg, uint8_t *data, uint16_t len, spi_cb *cb)
 	static uint8_t rx_buff; // only read the status
 	spi_queue_xfer_sg(&w_register_ctx, NRF_SPI_CS,
 			sg_init(tx_sg, &cmd, 1, data, len),
+			sg_init(&rx_sg, &rx_buff, 1),
+			cb, &rx_buff);
+}
+
+
+void
+write_register_single(enum NRF_REG_ADDR reg, uint8_t data, spi_cb *cb)
+{
+	static uint8_t cmd = NRF_CMD_W_REGISTER;
+	cmd |= (NRF_REG_MASK & reg);
+	static struct spi_ctx_bare w_register_ctx;
+	static struct sg tx_sg[2];
+	static struct sg rx_sg;
+	static uint8_t rx_buff; // only read the status
+	spi_queue_xfer_sg(&w_register_ctx, NRF_SPI_CS,
+			sg_init(tx_sg, &cmd, 1, &data, 1),
 			sg_init(&rx_sg, &rx_buff, 1),
 			cb, &rx_buff);
 }
@@ -160,16 +184,40 @@ nop(spi_cb *cb)
 }
 
 void
-PORTC_Handler(void)
+PORTC_Handler__read_rx_payload(void *data)
 {
 
 }
 
 void
-nrf_init(void)
+PORTC_Handler__status(void *data)
 {
+	struct status_register_t *status = data;
+	if (status->RX_DR) {
+		read_rx_payload( PORTC_Handler__read_rx_payload);
+	}
+
+	if (status->TX_DS) {
+	}
+
+	if (status->MAX_RT) {
+	}
+}
+
+void
+PORTC_Handler(void)
+{
+	nop(PORTC_Handler__status);
+}
+
+void
+nrf_init(nrf_data_available *cb_avail, nrf_data_sent *cb_sent)
+{
+	data_available = cb_avail;
+	data_sent = cb_sent;
+
 	gpio_dir(NRF_CE, GPIO_OUTPUT);
-	gpio_write(NRF_CE, 1);
+	gpio_write(NRF_CE, NRF_CE_RX);
 
 	pin_mode(NRF_CSN, PIN_MODE_MUX_ALT2);
 	pin_mode(NRF_SCK, PIN_MODE_MUX_ALT2);
@@ -186,6 +234,6 @@ int
 main(void)
 {
 	spi_init();
-	nrf_init();
+	nrf_init(NULL, NULL);
 	sys_yield_for_frogs();
 }
