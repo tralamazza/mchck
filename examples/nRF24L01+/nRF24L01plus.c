@@ -217,7 +217,7 @@ handle_status(void *data)
 	trans.tx_len = 1;
 	trans.tx_data = &trans->status;
 	trans.rx_len = 0;
-	send_command(&trans_ci, NULL);
+	send_command(&trans, NULL);
 }
 
 void

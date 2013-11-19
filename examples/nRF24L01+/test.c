@@ -9,7 +9,11 @@ static uint8_t rx_buffer[RX_SIZE];
 static uint8_t tx_buffer = 0;
 
 static struct nrf_addr_t test_addr = {
-	.value =  { 0xaa, 0xde, 0xad, 0xbe, 0xef },
+	.value =  { 0xaa, 0xde, 0xad, 0xbe, 0xff },
+	.size = 5
+};
+static struct nrf_addr_t my_addr = {
+	.value =  { 0xaa, 0xde, 0xad, 0xbe, 0xaa },
 	.size = 5
 };
 
@@ -24,7 +28,7 @@ data_sent(struct nrf_addr_t *receiver, void *data, uint8_t len)
 {
 	// len == 0 when tx fifo full
 	// len < 0 when max retransmit
-	nrf_receive(rx_buffer, RX_SIZE, data_received);
+	nrf_receive(&my_addr, rx_buffer, RX_SIZE, data_received);
 }
 
 static void
