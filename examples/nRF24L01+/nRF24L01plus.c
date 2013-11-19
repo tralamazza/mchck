@@ -2,12 +2,12 @@
 #include "nRF24L01plus.h"
 
 
-#define NRF_REG_MASK 0x1f
+#define NRF_REG_MASK 0x1f // 0001 1111
 
 
 enum NRF_CMD {
-	NRF_CMD_R_REGISTER 			= 0x0a, // 5 lower bits masked
-	NRF_CMD_W_REGISTER 			= 0x1a, // 5 lower bits masked
+	NRF_CMD_R_REGISTER 			= 0x00, // 5 lower bits masked
+	NRF_CMD_W_REGISTER 			= 0x20, // 5 lower bits masked
 	NRF_CMD_R_RX_PAYLOAD 		= 0x61,
 	NRF_CMD_W_TX_PAYLOAD 		= 0xa0,
 	NRF_CMD_FLUSH_TX 			= 0xe1,
