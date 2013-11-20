@@ -65,9 +65,10 @@ buttons_poll()
 	gpio_dir(pin, GPIO_INPUT);																\
 	pin_mode(pin, PIN_MODE_PULLUP);															\
 
-#define BUTTON_DEBOUNCE(pin, clk)                       \
-    pin_physport_from_pin(pin)->dfcr.cs = PORT_CS_LPO;  \
-    pin_physport_from_pin(pin)->dfwr.filt = clk;        \
+#define BUTTON_DEBOUNCE(pin, clk)                       				\
+    pin_physport_from_pin(pin)->dfcr.cs = PORT_CS_LPO;  				\
+    pin_physport_from_pin(pin)->dfwr.filt = clk;        				\
+    pin_physport_from_pin(pin)->dfer |= 1 << pin_physpin_from_pin(pin);	\
 
 static void
 buttons_init()
