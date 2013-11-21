@@ -125,7 +125,7 @@ struct nrf_transaction_t {
 
 struct nrf_context_t {
 	struct nrf_transaction_t trans;
-	nrf_data_callback user_cb;
+	nrf_data_callback *user_cb;
 	void *user_data;
 	size_t user_data_len;
 	enum nrf_state_t {
@@ -134,7 +134,7 @@ struct nrf_context_t {
 	} state;
 };
 
-static nrf_context_t nrf_ctx;
+static struct nrf_context_t nrf_ctx;
 
 static void
 send_command(struct nrf_transaction_t *trans, spi_cb *cb)
@@ -187,7 +187,7 @@ nrf_set_rx_address(uint8_t pipe, struct nrf_addr_t *addr)
 static void
 handle_read_payload(void *data)
 {
-	nrf_ctx.trans.user_cb(NULL, nrf_ctx.trans.user_data, nrf_ctx.trans.user_data_len);
+	nrf_ctx.user_cb(NULL, nrf_ctx.user_data, nrf_ctx.user_data_len);
 }
 
 static void
@@ -200,24 +200,24 @@ handle_status(void *data)
 		nrf_ctx.trans.cmd = NRF_CMD_R_RX_PAYLOAD;
 		nrf_ctx.trans.tx_len = 0;
 		nrf_ctx.trans.rx_len = nrf_ctx.user_data_len;
-		nrf_ctx.trans.rx_data = nrf_ctx.trans.user_data;
+		nrf_ctx.trans.rx_data = nrf_ctx.user_data;
 		send_command(&nrf_ctx.trans, handle_read_payload);
 	}
 
 	if (trans->status.TX_DS) {
-		status.TX_DS = 1;
+		// status.TX_DS = 1;
 	}
 
 	if (trans->status.MAX_RT) {
-		status.MAX_RT = 1;
+		// status.MAX_RT = 1;
 	}
 
 	// clear interrupt
-	trans.cmd = NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_STATUS);
-	trans.tx_len = 1;
-	trans.tx_data = &trans->status;
-	trans.rx_len = 0;
-	send_command(&trans, NULL);
+	trans->cmd = NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_STATUS);
+	trans->tx_len = 1;
+	trans->tx_data = &trans->status;
+	trans->rx_len = 0;
+	send_command(trans, NULL);
 }
 
 void
@@ -292,7 +292,7 @@ nrf_set_rate_and_power(enum nrf_data_rate_t data_rate, enum nrf_tx_output_power_
 		.pad1 = 0,
 		.pad2 = 0
 	};
-	nrf_ctx.trans.cmd = NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_RF_SETUP)
+	nrf_ctx.trans.cmd = NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_RF_SETUP);
 	nrf_ctx.trans.tx_len = 1;
 	nrf_ctx.trans.tx_data = &rf_setup;
 	nrf_ctx.trans.rx_len = 0;
