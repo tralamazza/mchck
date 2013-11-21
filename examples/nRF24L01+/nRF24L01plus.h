@@ -22,9 +22,9 @@ typedef void (nrf_data_callback)(struct nrf_addr_t *, void *, uint8_t);
 void nrf_init(void);
 void nrf_receive(struct nrf_addr_t *, void *, uint8_t, nrf_data_callback);
 void nrf_send(struct nrf_addr_t *, void *, uint8_t, nrf_data_callback);
-void nrf_set_channel(uint8_t);
+/*void nrf_set_channel(uint8_t);
 void nrf_set_rate_and_power(enum nrf_data_rate_t, enum nrf_tx_output_power_t);
-
+*/
 /*
 struct nrf_data_pipe_payload_size_t {
 	uint8_t : 2;// 0

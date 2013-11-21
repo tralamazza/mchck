@@ -43,8 +43,8 @@ int
 main(void)
 {
 	nrf_init();
-	nrf_set_channel(CHANNEL);
-	nrf_set_rate_and_power(NRF_DATA_RATE_1MBPS, NRF_TX_POWER_0DBM);
+/*	nrf_set_channel(CHANNEL);
+	nrf_set_rate_and_power(NRF_DATA_RATE_1MBPS, NRF_TX_POWER_0DBM);*/
 	timeout_init();
 	ping(NULL);
 	sys_yield_for_frogs();
