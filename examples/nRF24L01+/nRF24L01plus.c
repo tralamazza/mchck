@@ -229,6 +229,7 @@ PORTC_Handler(void)
 		.rx_len = 0
 	};
 	send_command(&trans, handle_status);
+	pin_physport_from_pin(NRF_IRQ)->pcr[pin_physpin_from_pin(NRF_IRQ)].raw |= 0; // clear interrupt
 }
 
 void
