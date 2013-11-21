@@ -183,7 +183,7 @@ handle_status(void *data)
 	}
 
 	if (trans->status.TX_DS) {
-		nrf_ctx.state = -1;
+		nrf_ctx.state = NRF_STATE_SEND_DATA_SENT;
 		nrf_handle_send();
 	}
 
