@@ -15,16 +15,22 @@ enum nrf_data_rate_t {
 struct nrf_addr_t {
 	uint8_t value[5];
 	uint8_t size;
-};
+} __packed;
 
 typedef void (nrf_data_callback)(struct nrf_addr_t *, void *, uint8_t);
+typedef void (nrf_callback)(void *);
 
 void nrf_init(void);
 void nrf_receive(struct nrf_addr_t *, void *, uint8_t, nrf_data_callback);
 void nrf_send(struct nrf_addr_t *, void *, uint8_t, nrf_data_callback);
+void nrf_read_register(uint8_t, nrf_callback);
+void nrf_write_register(uint8_t, uint8_t*, size_t, nrf_callback);
 /*void nrf_set_channel(uint8_t);
 void nrf_set_rate_and_power(enum nrf_data_rate_t, enum nrf_tx_output_power_t);
 */
+void nrf_btle_init(char* name, size_t name_len);
+void nrf_btle_advertise(void* data, size_t len);
+
 /*
 struct nrf_data_pipe_payload_size_t {
 	uint8_t : 2;// 0

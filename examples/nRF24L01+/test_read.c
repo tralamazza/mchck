@@ -6,7 +6,7 @@
 static struct cdc_ctx cdc;
 
 static void
-nrf_read_reg(void* data)
+print_data(void* data)
 {
 	onboard_led(ONBOARD_LED_TOGGLE);
 	printf("value 0x%x\r\n", *(uint8_t*)data);
@@ -18,7 +18,7 @@ new_data(uint8_t *data, size_t len)
 	onboard_led(ONBOARD_LED_TOGGLE);
 	uint8_t reg = data[0] - 97;
 	printf("read 0x%x\r\n", reg);
-	nrf_read_register(reg, nrf_read_reg);
+	nrf_read_register(reg, print_data);
 	cdc_read_more(&cdc);
 }
 
@@ -38,11 +38,14 @@ static const struct usbd_device cdc_device =
 					 CDC)                /* functions */
 	);
 
+static uint8_t reg_value = 0x12;
+
 void
 main(void)
 {
 	timeout_init();
 	nrf_init();
 	usb_init(&cdc_device);
+	nrf_write_register(0x0, &reg_value, 1, print_data);
 	sys_yield_for_frogs();
 }
