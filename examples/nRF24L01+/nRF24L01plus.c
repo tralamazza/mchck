@@ -83,68 +83,50 @@ enum nrf_state_t {
 
 /* BEGIN nrf registers */
 struct nrf_datapipe_payload_size_t {
-	uint8_t pad : 2; // 0
 	uint8_t size : 6; // 1...32, 0 pipe not used
+	uint8_t pad : 2; // 0
 } __packed;
 CTASSERT_SIZE_BYTE(struct nrf_datapipe_payload_size_t, 1);
 
-struct nrf_reg_config_t {
-	uint8_t pad: 1; // 0
-	uint8_t MASK_RX_DR : 1;
-	uint8_t MASK_TX_DS : 1;
-	uint8_t MASK_MAX_RT : 1;
-	uint8_t EN_CRC : 1;  // reset value 1
-	enum nrf_crc_encoding_scheme {
-		NRF_CRC_ENC_1_BYTE = 0, // reset value
-		NRF_CRC_ENC_2_BYTES = 1
-	} CRCO : 1;
-	uint8_t PWR_UP : 1;
-	enum nrf_rxtx_control {
-		NRF_PRIM_RX_PTX = 0, // reset value
-		NRF_PRIM_RX_PRX = 1
-	} PRIM_RX : 1;
-} __packed;
-CTASSERT_SIZE_BYTE(struct nrf_reg_config_t, 1);
-
 struct nrf_status_t {
-	uint8_t pad : 1; // 0
-	uint8_t RX_DR : 1;
-	uint8_t TX_DS : 1;
-	uint8_t MAX_RT : 1;
-	uint8_t RX_P_NO : 3; // reset value 111
 	uint8_t TX_FULL : 1;
+	uint8_t RX_P_NO : 3; // reset value 111
+	uint8_t MAX_RT : 1;
+	uint8_t TX_DS : 1;
+	uint8_t RX_DR : 1;
+	uint8_t pad : 1; // 0
 } __packed;
 CTASSERT_SIZE_BYTE(struct nrf_status_t, 1);
 
 struct nrf_rf_ch_t {
-	uint8_t pad : 1; // 0
 	uint8_t RF_CH : 7; // reset value 0000010
+	uint8_t pad : 1; // 0
 } __packed;
 CTASSERT_SIZE_BYTE(struct nrf_rf_ch_t, 1);
 
 struct nrf_rf_setup_t {
-	uint8_t CONT_WAVE : 1;
-	uint8_t pad1 : 1; // 0
-	enum nrf_data_rate_t rate : 3;
-	enum nrf_tx_output_power_t RF_PWR : 2;
 	uint8_t pad2 : 1; // 0
+	enum nrf_tx_output_power_t RF_PWR : 2;
+	enum nrf_data_rate_t rate : 3;
+	uint8_t pad1 : 1; // 0
+	uint8_t CONT_WAVE : 1;
 } __packed;
 CTASSERT_SIZE_BYTE(struct nrf_rf_setup_t, 1);
 
 struct nrf_addr_width_t {
-	uint8_t pad : 5; // 00000
 	enum nrf_rxtx_addr_field_width {
 		NRF_ADDR_FIELD_WIDTH_ILLEGAL = 0,
 		NRF_ADDR_FIELD_WIDTH_3_BYTES = 1,
 		NRF_ADDR_FIELD_WIDTH_4_BYTES = 2,
 		NRF_ADDR_FIELD_WIDTH_5_BYTES = 3 // reset value
 	} width : 2;
+	uint8_t pad : 6; // 000000
 } __packed;
 CTASSERT_SIZE_BYTE(struct nrf_addr_width_t, 1);
 
 struct nrf_retries_t {
-	uint8_t ARD : 4; // in 250us steps, reset value 0
 	uint8_t ARC : 4; // number of retries, reset value 3
+	uint8_t ARD : 4; // in 250us steps, reset value 0
 } __packed;
 CTASSERT_SIZE_BYTE(struct nrf_retries_t, 1);
 
@@ -160,7 +142,7 @@ struct nrf_transaction_t {
 	uint8_t rx_len;
 	struct nrf_status_t status;
 	void *rx_data;
-} __packed;
+};
 
 struct nrf_context_t {
 	struct nrf_transaction_t trans;
@@ -171,14 +153,14 @@ struct nrf_context_t {
 	void *payload;
 	nrf_data_callback *user_cb;
 	enum nrf_state_t state;
-} __packed;
+};
 
 static uint8_t btle_on = 0;
 
 static struct nrf_context_t nrf_ctx;
 
-static void nrf_handle_receive();
-static void nrf_handle_send();
+static void nrf_handle_receive(void*);
+static void nrf_handle_send(void*);
 
 #define NRF_SET_CTX(_cmd, _tx_len, _tx_data, _rx_len, _rx_data, _state)	\
 	nrf_ctx.trans.cmd = _cmd;											\
@@ -191,10 +173,14 @@ static void nrf_handle_send();
 static void
 send_command(struct nrf_transaction_t *trans, spi_cb *cb, void *data)
 {
-	spi_queue_xfer_sg(&trans->spi_ctx, NRF_SPI_CS,
-		sg_init(trans->tx_sg, &trans->cmd, 1, trans->tx_data, trans->tx_len),
-		sg_init(trans->rx_sg, &trans->status, 1, trans->rx_data, trans->rx_len),
-		cb, data);
+	struct sg *tx = trans->tx_len ?
+		sg_init(trans->tx_sg, &trans->cmd, 1, trans->tx_data, trans->tx_len) :
+		sg_init(trans->tx_sg, &trans->cmd, 1);
+	struct sg *rx = trans->rx_len ?
+		sg_init(trans->rx_sg, &trans->status, 1, trans->rx_data, trans->rx_len) :
+		sg_init(trans->rx_sg, &trans->status, 1);
+
+	spi_queue_xfer_sg(&trans->spi_ctx, NRF_SPI_CS, tx, rx, cb, data);
 }
 
 static void
@@ -203,23 +189,23 @@ handle_status(void *data)
 	struct nrf_transaction_t *trans = data;
 
 	// HAAAAACK, just to be sure
-	if (!nrf_ctx.user_cb || btle_on)
-		goto cli;
+	if (btle_on)
+		goto handle_status_cli;
 
-	if (trans->status.RX_DR) {
+	if (trans->status.RX_DR && nrf_ctx.state != NRF_STATE_RECV_FETCH_DATA) {
 		nrf_ctx.state = NRF_STATE_RECV_FETCH_DATA;
-		nrf_handle_receive();
+		nrf_handle_receive(NULL);
 	}
 
-	if (trans->status.TX_DS) {
+	if (trans->status.TX_DS && nrf_ctx.state != NRF_STATE_SEND_DATA_SENT) {
 		nrf_ctx.state = NRF_STATE_SEND_DATA_SENT;
-		nrf_handle_send();
+		nrf_handle_send(NULL);
 	}
 
 	if (trans->status.MAX_RT) {
 	}
 
-cli:
+handle_status_cli:
 	// clear NRF interrupt
 	trans->cmd = NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_STATUS);
 	trans->tx_len = 1;
@@ -231,13 +217,13 @@ cli:
 void
 PORTC_Handler(void)
 {
+	pin_physport_from_pin(NRF_IRQ)->pcr[pin_physpin_from_pin(NRF_IRQ)].raw |= 0; // clear MCU interrupt
 	static struct nrf_transaction_t trans = {
 		.cmd = NRF_CMD_NOP,
 		.tx_len = 0,
 		.rx_len = 0
 	};
 	send_command(&trans, handle_status, &trans); // nop it to get the status register
-	pin_physport_from_pin(NRF_IRQ)->pcr[pin_physpin_from_pin(NRF_IRQ)].raw |= 0; // clear MCU interrupt
 }
 
 void
@@ -294,7 +280,7 @@ nrf_read_register(uint8_t reg, nrf_callback cb)
 }
 
 void
-nrf_write_register(uint8_t reg, uint8_t *data, size_t len, nrf_callback cb)
+nrf_write_register(uint8_t reg, void *data, size_t len, nrf_callback cb)
 {
 	nrf_ctx.trans.cmd = NRF_CMD_W_REGISTER | (NRF_REG_MASK & reg);
 	nrf_ctx.trans.tx_len = len;
@@ -363,18 +349,6 @@ nrf_handle_send(void *data)
 {
 	switch (nrf_ctx.state) {
 	default:
-	case NRF_STATE_SEND_SET_RX_LOW: {
-		static struct nrf_reg_config_t config = {
-			.pad = 0,
-			.PRIM_RX = NRF_PRIM_RX_PTX,
-			.PWR_UP = 1
-		};
-		NRF_SET_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_CONFIG),
-			1, &config,
-			0, NULL,
-			NRF_STATE_SEND_SET_TX_ADDR);
-		break;
-	}
 	case NRF_STATE_SEND_SET_TX_ADDR: {
 		NRF_SET_CTX(NRF_REG_ADDR_TX_ADDR,
 			nrf_ctx.tx_addr->size, nrf_ctx.tx_addr->value,
@@ -393,8 +367,20 @@ nrf_handle_send(void *data)
 		NRF_SET_CTX(NRF_CMD_W_TX_PAYLOAD,
 			nrf_ctx.payload_size, nrf_ctx.payload,
 			0, NULL,
+			NRF_STATE_SEND_SET_RX_LOW);
+		break;
+	case NRF_STATE_SEND_SET_RX_LOW: {
+		static struct nrf_reg_config_t config = {
+			.pad = 0,
+			.PRIM_RX = NRF_PRIM_RX_PTX,
+			.PWR_UP = 1
+		};
+		NRF_SET_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_CONFIG),
+			1, &config,
+			0, NULL,
 			NRF_STATE_SEND_SET_CE_HIGH);
 		break;
+	}
 	case NRF_STATE_SEND_SET_CE_HIGH:
 		gpio_write(NRF_CE, 1);
 		nrf_ctx.state = NRF_STATE_SEND_WAITING;
@@ -409,39 +395,6 @@ nrf_handle_send(void *data)
 	send_command(&nrf_ctx.trans, nrf_handle_send, NULL);
 }
 
-/*
-void
-nrf_set_channel(uint8_t channel)
-{
-	static struct nrf_rf_ch_t rf_ch = {
-		.pad = 0
-	};
-	nrf_ctx.trans.cmd = NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_RF_CH);
-	nrf_ctx.trans.tx_len = 1;
-	nrf_ctx.trans.tx_data = &rf_ch;
-	nrf_ctx.trans.rx_len = 0;
-	rf_ch.RF_CH = channel;
-	send_command(&nrf_ctx.trans, NULL);
-}
-
-void
-nrf_set_rate_and_power(enum nrf_data_rate_t data_rate, enum nrf_tx_output_power_t output_power)
-{
-	static struct nrf_rf_setup_t rf_setup = {
-		.CONT_WAVE = 0,
-		.pad1 = 0,
-		.pad2 = 0
-	};
-	nrf_ctx.trans.cmd = NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_RF_SETUP);
-	nrf_ctx.trans.tx_len = 1;
-	nrf_ctx.trans.tx_data = &rf_setup;
-	nrf_ctx.trans.rx_len = 0;
-	rf_setup.RF_PWR = output_power;
-	rf_setup.rate = data_rate;
-	send_command(&nrf_ctx.trans, NULL);
-}
-*/
-
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // http://dmitry.gr/index.php?r=05.Projects&proj=15&proj=11.%20Bluetooth%20LE%20fakery
@@ -450,15 +403,6 @@ nrf_set_rate_and_power(enum nrf_data_rate_t data_rate, enum nrf_tx_output_power_
 
 
 enum nrf_btle_state_t {
-/*  NRF_BTLE_STATE_SET_POWER_RATE,
-  NRF_BTLE_STATE_SET_ADDR_SIZE,
-  NRF_BTLE_STATE_DISABLE_AUTO_ACK,
-  NRF_BTLE_STATE_DISABLE_CRC,
-  NRF_BTLE_STATE_DISABLE_RETR,
-  NRF_BTLE_STATE_HOP_CH,
-  NRF_BTLE_STATE_SET_CHANNEL,
-  NRF_BTLE_STATE_WAITING,
-*/
   NRF_BTLE_STATE_INIT_SIMPLE,
   NRF_BTLE_STATE_SET_TX_ADDR,
   NRF_BTLE_STATE_SET_RX_ADDR_P0,
@@ -493,15 +437,6 @@ static struct nrf_addr_t btle_ad_addr = {
 };
 
 static struct nrf_btle_ctx_t nrf_btle_ctx;
-
-/*#define NRF_SET_BTLE_CTX(_cmd, _tx_len, _tx_data, _rx_len, _rx_data, _state)	\
-	nrf_btle_ctx.trans.cmd = _cmd;												\
-	nrf_btle_ctx.trans.tx_len = _tx_len;										\
-	nrf_btle_ctx.trans.tx_data = _tx_data;										\
-	nrf_btle_ctx.trans.rx_len = _rx_len;										\
-	nrf_btle_ctx.trans.rx_data = _rx_data;										\
-	nrf_btle_ctx.state = _state;												\
-*/
 
 static void btLeCrc(const uint8_t* data, uint8_t len, uint8_t* dst) {
 	uint8_t v, t, d;
@@ -690,7 +625,7 @@ nrf_btle_handler_simple(void* data) {
 	case NRF_BTLE_STATE_ADVERTISE_CE_HIGH:
 		gpio_write(NRF_CE, 1);
 		nrf_btle_ctx.state = NRF_BTLE_STATE_ADVERTISE_WAIT;
-		timeout_add(&ad_timeout, 1, nrf_btle_handler_simple, NULL);
+		timeout_add(&ad_timeout, 10, nrf_btle_handler_simple, NULL); // way too much
 		return;
 	case NRF_BTLE_STATE_ADVERTISE_WAIT:
 		gpio_write(NRF_CE, 0);
@@ -699,90 +634,6 @@ nrf_btle_handler_simple(void* data) {
 	send_command(&nrf_btle_ctx.trans, nrf_btle_handler_simple, NULL);
 }
 
-/*
-static void
-nrf_btle_handler(void* data)
-{
-	switch (nrf_btle_ctx.state) {
-	case NRF_BTLE_STATE_SET_POWER_RATE: {
-		static struct nrf_rf_setup_t rf_setup = {
-			.CONT_WAVE = 0,
-			.pad1 = 0,
-			.pad2 = 0
-		};
-		rf_setup.RF_PWR = NRF_TX_POWER_0DBM;
-		rf_setup.rate = NRF_DATA_RATE_1MBPS;
-		NRF_SET_BTLE_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_RF_SETUP),
-			1, &rf_setup,
-			0, NULL,
-			NRF_BTLE_STATE_SET_ADDR_SIZE);
-		break;
-	}
-	case NRF_BTLE_STATE_SET_ADDR_SIZE: {
-		static struct nrf_addr_width_t addr_width = {
-			.pad = 0,
-			.width = NRF_ADDR_FIELD_WIDTH_4_BYTES
-		};
-		NRF_SET_BTLE_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_SETUP_AW),
-			1, &addr_width,
-			0, NULL,
-			NRF_BTLE_STATE_DISABLE_AUTO_ACK);
-		break;
-	}
-	case NRF_BTLE_STATE_DISABLE_AUTO_ACK: {
-		static uint8_t zero = 0;
-		NRF_SET_BTLE_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_EN_AA),
-			1, &zero,
-			0, NULL,
-			NRF_BTLE_STATE_DISABLE_CRC);
-		break;
-	}
-	case NRF_BTLE_STATE_DISABLE_CRC: {
-		struct nrf_reg_config_t config = {
-			.pad = 0,
-			.PRIM_RX = NRF_PRIM_RX_PTX,
-			.EN_CRC = 0
-		};
-		NRF_SET_BTLE_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_CONFIG),
-			1, &config,
-			0, NULL,
-			NRF_BTLE_STATE_DISABLE_RETR);
-		break;
-	}
-	case NRF_BTLE_STATE_DISABLE_RETR: {
-		struct nrf_retries_t retries = {
-			.ARD = 0,
-			.ARC = 0
-		};
-		NRF_SET_BTLE_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_SETUP_RETR),
-			1, &retries,
-			0, NULL,
-			NRF_BTLE_STATE_SET_CHANNEL);
-		break;
-	}
-	case NRF_BTLE_STATE_HOP_CH:
-		if (nrf_btle_ctx.current_ch++ >= NRF_BTLE_CH_COUNT)
-			nrf_btle_ctx.current_ch = 0;
-		// FALLTHROUGH
-	case NRF_BTLE_STATE_SET_CHANNEL: {
-		static struct nrf_rf_ch_t rf_ch = {
-			.pad = 0
-		};
-		rf_ch.RF_CH = nrf_btle_ctx.current_ch;
-		NRF_SET_BTLE_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_RF_CH),
-			1, &rf_ch,
-			0, NULL,
-			NRF_BTLE_STATE_WAITING);
-		break;
-	}
-	case NRF_BTLE_STATE_WAITING:
-		return;
-	case NRF_BTLE_STATE_ADVERTISE:
-		nrf_btle_ctx.state = NRF_BTLE_STATE_HOP_CH;
-	}
-	send_command(&nrf_btle_ctx.trans, nrf_btle_handler);
-}
-*/
 void nrf_btle_init(char* name, size_t name_len)
 {
 	nrf_btle_ctx.current_ch = 0;
