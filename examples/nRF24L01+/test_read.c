@@ -24,12 +24,14 @@ static void
 new_data(uint8_t *data, size_t len)
 {
 	onboard_led(ONBOARD_LED_TOGGLE);
-	uint8_t reg = data[0] - 97;
-	printf("read 0x%x\r\n", reg);
-	if (data[0] == 'w')
+	if (data[0] == 'w') {
+		printf("write config reg\r\n");
 		nrf_write_register(0x0, &config, 1, print_data);
-	else
+	} else {
+		uint8_t reg = data[0] - 97;
+		printf("read 0x%x\r\n", reg);
 		nrf_read_register(reg, print_data);
+	}
 	cdc_read_more(&cdc);
 }
 
