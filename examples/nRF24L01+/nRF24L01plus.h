@@ -1,4 +1,5 @@
 struct nrf_reg_config_t {
+	// union {
 	enum nrf_rxtx_control {
 		NRF_PRIM_RX_PTX = 0, // reset value
 		NRF_PRIM_RX_PRX = 1
@@ -13,6 +14,9 @@ struct nrf_reg_config_t {
 	uint8_t MASK_TX_DS : 1;
 	uint8_t MASK_RX_DR : 1;
 	uint8_t pad: 1; // 0
+
+	// uint8_t value;
+	// };
 } __packed;
 CTASSERT_SIZE_BYTE(struct nrf_reg_config_t, 1);
 
@@ -31,9 +35,10 @@ enum nrf_data_rate_t {
 };
 
 struct nrf_addr_t {
-	uint8_t value[5];
+	// uint8_t value[5];
+	uint64_t value;
 	uint8_t size;
-} __packed;
+};
 
 typedef void (nrf_data_callback)(struct nrf_addr_t *, void *, uint8_t);
 typedef void (nrf_callback)(void *);
@@ -41,8 +46,8 @@ typedef void (nrf_callback)(void *);
 void nrf_init(void);
 void nrf_receive(struct nrf_addr_t *, void *, uint8_t, nrf_data_callback);
 void nrf_send(struct nrf_addr_t *, void *, uint8_t, nrf_data_callback);
-void nrf_read_register(uint8_t, nrf_callback);
-void nrf_write_register(uint8_t, void*, size_t, nrf_callback);
+void nrf_read_register(uint8_t reg, nrf_callback cb);
+void nrf_write_register(uint8_t reg, void *data, size_t len, nrf_callback cb);
 
 void nrf_btle_init(char* name, size_t name_len);
 void nrf_btle_advertise(void* data, size_t len);
