@@ -258,13 +258,6 @@ nrf_init(void)
 	gpio_dir(NRF_IRQ, GPIO_INPUT);
 	pin_physport_from_pin(NRF_IRQ)->pcr[pin_physpin_from_pin(NRF_IRQ)].irqc = PCR_IRQC_INT_FALLING;
 	int_enable(IRQ_PORTC);
-
-	// static struct nrf_status_t status = {
-	// 	.RX_DR = 1,
-	// 	.TX_DS = 1,
-	// 	.MAX_RT = 1,
-	// };
-	// nrf_write_register(NRF_REG_ADDR_STATUS, &status, 1, NULL);
 }
 
 void
