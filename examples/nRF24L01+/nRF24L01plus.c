@@ -240,7 +240,7 @@ PORTC_Handler(void)
 void
 nrf_init(void)
 {
-	nrf_ctx.channel = 42;
+	nrf_ctx.channel = 16;
 	nrf_ctx.data_rate = NRF_DATA_RATE_1MBPS;
 	nrf_ctx.power = NRF_TX_POWER_0DBM;
 	nrf_ctx.crc_len = NRF_CRC_ENC_1_BYTE;
@@ -258,13 +258,6 @@ nrf_init(void)
 	gpio_dir(NRF_IRQ, GPIO_INPUT);
 	pin_physport_from_pin(NRF_IRQ)->pcr[pin_physpin_from_pin(NRF_IRQ)].irqc = PCR_IRQC_INT_FALLING;
 	int_enable(IRQ_PORTC);
-
-	// static struct nrf_status_t status = {
-	// 	.RX_DR = 1,
-	// 	.TX_DS = 1,
-	// 	.MAX_RT = 1,
-	// };
-	// nrf_write_register(NRF_REG_ADDR_STATUS, &status, 1, NULL);
 }
 
 void
@@ -322,7 +315,10 @@ nrf_handle_receive(void *data)
 		static struct nrf_reg_config_t config = {
 			.pad = 0,
 			.PRIM_RX = NRF_PRIM_RX_PRX,
-			.PWR_UP = 1
+			.PWR_UP = 1,
+			.MASK_MAX_RT = 0,
+			.MASK_TX_DS = 0,
+			.MASK_RX_DR = 0
 		};
 		config.CRCO = nrf_ctx.crc_len;
 		NRF_SET_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_CONFIG),
@@ -332,7 +328,7 @@ nrf_handle_receive(void *data)
 		break;
 	}
 	case NRF_STATE_RECV_SET_RFSETUP: {
-		struct nrf_rf_setup_t rfsetup = {
+		static struct nrf_rf_setup_t rfsetup = {
 			.pad2 = 0,
 			.pad1 = 0,
 			.CONT_WAVE = 0
@@ -346,7 +342,7 @@ nrf_handle_receive(void *data)
 		break;
 	}
 	case NRF_STATE_RECV_SET_CHANNEL: {
-		struct nrf_rf_ch_t ch = {
+		static struct nrf_rf_ch_t ch = {
 			.pad = 0
 		};
 		ch.RF_CH = nrf_ctx.channel;
@@ -402,7 +398,10 @@ nrf_handle_send(void *data)
 		static struct nrf_reg_config_t config = {
 			.pad = 0,
 			.PRIM_RX = NRF_PRIM_RX_PTX,
-			.PWR_UP = 1
+			.PWR_UP = 1,
+			.MASK_MAX_RT = 0,
+			.MASK_TX_DS = 0,
+			.MASK_RX_DR = 0
 		};
 		config.CRCO = nrf_ctx.crc_len;
 		NRF_SET_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_CONFIG),
@@ -412,7 +411,7 @@ nrf_handle_send(void *data)
 		break;
 	}
 	case NRF_STATE_SEND_SET_RFSETUP: {
-		struct nrf_rf_setup_t rfsetup = {
+		static struct nrf_rf_setup_t rfsetup = {
 			.pad2 = 0,
 			.pad1 = 0,
 			.CONT_WAVE = 0
@@ -426,7 +425,7 @@ nrf_handle_send(void *data)
 		break;
 	}
 	case NRF_STATE_SEND_SET_CHANNEL: {
-		struct nrf_rf_ch_t ch = {
+		static struct nrf_rf_ch_t ch = {
 			.pad = 0
 		};
 		ch.RF_CH = nrf_ctx.channel;
