@@ -34,14 +34,14 @@ rpd_data(void *data)
 	// pick the next ch
 	if (++channel > 126) {
 		channel = 1;
-        if (--cycles == 0) {
-	      onboard_led(ONBOARD_LED_TOGGLE);
-          map[0] = 0;
-          map[1] = 0;
-          map[2] = 0;
-          map[3] = 0;
-          cycles = CYCLES;
-        }
+		if (--cycles == 0) {
+			onboard_led(ONBOARD_LED_TOGGLE);
+			map[0] = 0;
+			map[1] = 0;
+			map[2] = 0;
+			map[3] = 0;
+			cycles = CYCLES;
+		}
 	}
 	nrf_write_register(0x05, &channel, 1, sched_rpd_read);
 }
