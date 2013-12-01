@@ -84,7 +84,9 @@ enum nrf_state_t {
 	NRF_STATE_SEND_TX_PAYLOAD,
 	NRF_STATE_SEND_SET_CE_HIGH,
 	NRF_STATE_SEND_WAITING,
-	NRF_STATE_SEND_DATA_SENT
+	NRF_STATE_SEND_DATA_SENT,
+	NRF_STATE_SEND_MAX_RT,
+	NRF_STATE_SEND_TX_FLUSHED
 };
 
 /* BEGIN nrf registers */
@@ -202,17 +204,19 @@ handle_status(void *data)
 	if (btle_on)
 		goto handle_status_cli;
 
-	if (trans->status.RX_DR && nrf_ctx.state != NRF_STATE_RECV_FETCH_DATA) {
+	if (trans->status.RX_DR && nrf_ctx.state == NRF_STATE_RECV_WAITING) {
 		nrf_ctx.state = NRF_STATE_RECV_FETCH_DATA;
 		nrf_handle_receive(NULL);
 	}
 
-	if (trans->status.TX_DS && nrf_ctx.state != NRF_STATE_SEND_DATA_SENT) {
+	if (trans->status.TX_DS && nrf_ctx.state == NRF_STATE_SEND_WAITING) {
 		nrf_ctx.state = NRF_STATE_SEND_DATA_SENT;
 		nrf_handle_send(NULL);
 	}
 
-	if (trans->status.MAX_RT) {
+	if (trans->status.MAX_RT && nrf_ctx.state == NRF_STATE_SEND_WAITING) {
+		nrf_ctx.state = NRF_STATE_SEND_MAX_RT;
+		nrf_handle_send(NULL);
 	}
 
 handle_status_cli:
@@ -227,7 +231,8 @@ handle_status_cli:
 void
 PORTC_Handler(void)
 {
-	onboard_led(ONBOARD_LED_TOGGLE);
+	gpio_write(NRF_CE, 0);
+	// onboard_led(ONBOARD_LED_TOGGLE);
 	pin_physport_from_pin(NRF_IRQ)->pcr[pin_physpin_from_pin(NRF_IRQ)].raw |= 0; // clear MCU interrupt
 	static struct nrf_transaction_t trans = {
 		.cmd = NRF_CMD_NOP,
@@ -376,7 +381,7 @@ nrf_handle_receive(void *data)
 	case NRF_STATE_RECV_WAITING:
 		return; // wait for interrupt
 	case NRF_STATE_RECV_FETCH_DATA:
-		gpio_write(NRF_CE, 0);
+		// gpio_write(NRF_CE, 0);
 		NRF_SET_CTX(NRF_CMD_R_RX_PAYLOAD,
 			0, NULL,
 			nrf_ctx.payload_size, nrf_ctx.payload,
@@ -436,14 +441,14 @@ nrf_handle_send(void *data)
 		break;
 	}
 	case NRF_STATE_SEND_SET_TX_ADDR: {
-		NRF_SET_CTX(NRF_REG_ADDR_TX_ADDR,
+		NRF_SET_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_TX_ADDR),
 			nrf_ctx.tx_addr->size, &nrf_ctx.tx_addr->value,
 			0, NULL,
 			NRF_STATE_SEND_SET_RX_ADDR_P0);
 		break;
 	}
 	case NRF_STATE_SEND_SET_RX_ADDR_P0: {
-		NRF_SET_CTX(NRF_REG_ADDR_RX_ADDR_P0,
+		NRF_SET_CTX(NRF_CMD_W_REGISTER | (NRF_REG_MASK & NRF_REG_ADDR_RX_ADDR_P0),
 			nrf_ctx.tx_addr->size, &nrf_ctx.tx_addr->value,
 			0, NULL,
 			NRF_STATE_SEND_TX_PAYLOAD);
@@ -462,8 +467,16 @@ nrf_handle_send(void *data)
 	case NRF_STATE_SEND_WAITING:
 		return;
 	case NRF_STATE_SEND_DATA_SENT:
-		gpio_write(NRF_CE, 0);
 		nrf_ctx.user_cb(nrf_ctx.tx_addr, nrf_ctx.payload, nrf_ctx.payload_size);
+		return;
+	case NRF_STATE_SEND_MAX_RT:
+		NRF_SET_CTX(NRF_CMD_FLUSH_TX,
+			0, NULL,
+			0, NULL,
+			NRF_STATE_SEND_TX_FLUSHED);
+		break;
+	case NRF_STATE_SEND_TX_FLUSHED:
+		nrf_ctx.user_cb(NULL, nrf_ctx.payload, nrf_ctx.payload_size);
 		return;
 	}
 	send_command(&nrf_ctx.trans, nrf_handle_send, NULL);

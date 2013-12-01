@@ -1,5 +1,4 @@
 struct nrf_reg_config_t {
-	// union {
 	enum nrf_rxtx_control {
 		NRF_PRIM_RX_PTX = 0, // reset value
 		NRF_PRIM_RX_PRX = 1
@@ -14,9 +13,6 @@ struct nrf_reg_config_t {
 	uint8_t MASK_TX_DS : 1;
 	uint8_t MASK_RX_DR : 1;
 	uint8_t pad: 1; // 0
-
-	// uint8_t value;
-	// };
 } __packed;
 CTASSERT_SIZE_BYTE(struct nrf_reg_config_t, 1);
 
