@@ -3,11 +3,10 @@
 #include <usb/cdc-acm.h>
 #include "nRF24L01plus.h"
 
+// Wait for a uint32_t and send it back
+
 #define RX_SIZE 4
 
-// ping pong a uint32_t
-
-static struct timeout_ctx t;
 static int32_t tx_buffer = 0;
 static uint8_t rx_buffer[RX_SIZE];
 
@@ -24,15 +23,21 @@ static void wait_for_ping();
 static void send_ping();
 
 static void
-ping_sent(struct nrf_addr_t *receiver, void *data, uint8_t len)
+ping_sent(void *data, uint8_t len)
 {
-	if (!receiver)
-		onboard_led(ONBOARD_LED_TOGGLE);
+	if (!len)
+		onboard_led(ONBOARD_LED_TOGGLE); // send failed, max RT reached
 	wait_for_ping();
 }
 
 static void
-ping_received(struct nrf_addr_t *sender, void *data, uint8_t len)
+send_ping()
+{
+	nrf_send(&target_addr, &tx_buffer, sizeof(int32_t), ping_sent);
+}
+
+static void
+ping_received(void *data, uint8_t len)
 {
 	tx_buffer = *(int32_t*)data;
 	send_ping();
@@ -44,23 +49,12 @@ wait_for_ping()
 	nrf_receive(&my_addr, rx_buffer, RX_SIZE, ping_received);
 }
 
-static void
-send_ping()
-{
-	nrf_send(&target_addr, &tx_buffer, sizeof(int32_t), ping_sent);
-}
-
-static void
-delayed_init(void *nada)
-{
-	wait_for_ping();
-}
-
 int
 main(void)
 {
-	timeout_init();
-	timeout_add(&t, 100, delayed_init, NULL);
 	nrf_init();
+	nrf_set_channel(16);
+	nrf_set_power_datarate(NRF_TX_POWER_0DBM, NRF_DATA_RATE_1MBPS);
+	wait_for_ping();
 	sys_yield_for_frogs();
 }
