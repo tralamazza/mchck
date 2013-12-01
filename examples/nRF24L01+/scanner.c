@@ -3,17 +3,20 @@
 #include <usb/cdc-acm.h>
 #include "nRF24L01plus.h"
 
+#define CYCLES 5
+
 static struct cdc_ctx cdc;
 static struct timeout_ctx t;
-static uint8_t channel = 0;
+static uint8_t channel = 1;
+static uint8_t cycles = CYCLES;
 static struct nrf_reg_config_t config = {
 	.PRIM_RX = 1,
 	.PWR_UP = 1,
 	.CRCO = 0,
 	.EN_CRC = 1,
-	.MASK_RX_DR = 1,
-	.MASK_TX_DS = 1,
-	.MASK_MAX_RT = 1,
+	.MASK_RX_DR = 0,
+	.MASK_TX_DS = 0,
+	.MASK_MAX_RT = 0,
 	.pad = 0
 };
 
@@ -22,29 +25,25 @@ static uint32_t map[4] = { 0, 0, 0, 0 };
 static void sched_rpd_read();
 
 static void
-channel_hop()
-{
-	timeout_add(&t, 1, sched_rpd_read, NULL);
-}
-
-static void
 rpd_data(void *data)
 {
 	uint8_t value = *(uint8_t*)data;
 	uint8_t i = channel / 32;
 	uint8_t b = channel % 32;
 	map[i] |= (value << b);
-
 	// pick the next ch
-	if (++channel > 127) {
-		channel = 0;
-		map[0] = 0;
-		map[1] = 0;
-		map[2] = 0;
-		map[3] = 0;
+	if (++channel > 126) {
+		channel = 1;
+        if (--cycles == 0) {
+	      onboard_led(ONBOARD_LED_TOGGLE);
+          map[0] = 0;
+          map[1] = 0;
+          map[2] = 0;
+          map[3] = 0;
+          cycles = CYCLES;
+        }
 	}
-	channel &= 0x7f;
-	nrf_write_register(0x05, &channel, 1, channel_hop);
+	nrf_write_register(0x05, &channel, 1, sched_rpd_read);
 }
 
 static void
@@ -70,8 +69,7 @@ delayed_init()
 static void
 new_data(uint8_t *data, size_t len)
 {
-	onboard_led(ONBOARD_LED_TOGGLE);
-	printf("[%u] %08lx %08lx %08lx %08lx\r\n", channel, map[0], map[1], map[2], map[3]);
+	printf("%08lx %08lx %08lx %08lx\r\n", map[3], map[2], map[1], map[0]);
 	cdc_read_more(&cdc);
 }
 
@@ -100,3 +98,4 @@ main(void)
 	timeout_add(&t, 100, delayed_init, NULL); // wait 100ms before starting
 	sys_yield_for_frogs();
 }
+
