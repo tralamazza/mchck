@@ -20,6 +20,8 @@ FTFL_CONFIG = 0x00000400;
 FlexRAM     = 0x14000000;
 
 FTFL        = 0x40020000;
+DMA         = 0x40008000;
+DMAMUX0     = 0x40021000;
 SPI0        = 0x4002c000;
 CRC         = 0x40032000;
 PIT         = 0x40037000;

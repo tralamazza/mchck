@@ -1,0 +1,302 @@
+#include <mchck.h>
+
+struct DMA_t {
+	struct {
+		UNION_STRUCT_START(32);
+		uint32_t _res0 : 1;
+		uint32_t edbg  : 1;
+		uint32_t erca  : 1;
+		uint32_t _res1 : 1;
+		uint32_t hoe   : 1;
+		uint32_t halt  : 1;
+		uint32_t clm   : 1;
+		uint32_t emlm  : 1;
+		uint32_t _res2 : 8;
+		uint32_t ecx   : 1;
+		uint32_t cx    : 1;
+		uint32_t _res3 : 14;
+		UNION_STRUCT_END;
+	} cr;
+
+	struct {
+		UNION_STRUCT_START(32);
+		uint32_t dbe    : 1;
+		uint32_t sbe    : 1;
+		uint32_t sge    : 1;
+		uint32_t nce    : 1;
+		uint32_t doe    : 1;
+		uint32_t dae    : 1;
+		uint32_t soe    : 1;
+		uint32_t sae    : 1;
+		uint32_t errchn : 2;
+		uint32_t _res0  : 4;
+		uint32_t cpe    : 1;
+		uint32_t _res1  : 1;
+		uint32_t ecx    : 1;
+		uint32_t _res2  : 14;
+		uint32_t vld    : 1;
+		UNION_STRUCT_END;
+	} es;
+
+	uint32_t _pad0;
+
+	struct {
+		UNION_STRUCT_START(32);
+		uint32_t erq0 : 1;
+		uint32_t erq1 : 1;
+		uint32_t erq2 : 1;
+		uint32_t erq3 : 1;
+		uint32_t _res : 28;
+		UNION_STRUCT_END;
+	} erq;
+
+	uint32_t _pad1;
+
+	struct {
+		UNION_STRUCT_START(32);
+		uint32_t eei0 : 1;
+		uint32_t eei1 : 1;
+		uint32_t eei2 : 1;
+		uint32_t eei3 : 1;
+		uint32_t _res : 28;
+		UNION_STRUCT_END;
+	} eei;
+
+	struct {
+		UNION_STRUCT_START(8);
+		uint8_t ceei : 2;
+		uint8_t _res : 4;
+		uint8_t caee : 1;
+		uint8_t nop  : 1;
+		UNION_STRUCT_END;
+	} ceei;
+
+	struct {
+		UNION_STRUCT_START(8);
+		uint8_t seei : 1;
+		uint8_t _res : 4;
+		uint8_t saee : 1;
+		uint8_t nop  : 1;
+		UNION_STRUCT_END;
+	} seei;
+
+	struct {
+		UNION_STRUCT_START(8);
+		uint8_t cerq : 1;
+		uint8_t _res : 4;
+		uint8_t caer : 1;
+		uint8_t nop  : 1;
+		UNION_STRUCT_END;
+	} cerq;
+
+	struct {
+		UNION_STRUCT_START(8);
+		uint8_t serq : 1;
+		uint8_t _res : 4;
+		uint8_t saer : 1;
+		uint8_t nop  : 1;
+		UNION_STRUCT_END;
+	} serq;
+
+	struct {
+		UNION_STRUCT_START(8);
+		uint8_t cdne : 1;
+		uint8_t _res : 4;
+		uint8_t cadn : 1;
+		uint8_t nop  : 1;
+		UNION_STRUCT_END;
+	} cdne;
+
+	struct {
+		UNION_STRUCT_START(8);
+		uint8_t ssrt : 1;
+		uint8_t _res : 4;
+		uint8_t sast : 1;
+		uint8_t nop  : 1;
+		UNION_STRUCT_END;
+	} ssrt;
+
+	struct {
+		UNION_STRUCT_START(8);
+		uint8_t cerr : 1;
+		uint8_t _res : 4;
+		uint8_t caei : 1;
+		uint8_t nop  : 1;
+		UNION_STRUCT_END;
+	} cerr;
+
+	struct {
+		UNION_STRUCT_START(8);
+		uint8_t cint : 1;
+		uint8_t _res : 4;
+		uint8_t cair : 1;
+		uint8_t nop  : 1;
+		UNION_STRUCT_END;
+	} cint;
+
+	uint32_t _pad2;
+
+	struct {
+		UNION_STRUCT_START(32);
+		uint32_t int0 : 1;
+		uint32_t int1 : 1;
+		uint32_t int2 : 1;
+		uint32_t int3 : 1;
+		uint32_t _res : 28;
+		UNION_STRUCT_END;
+	} _int;
+
+	uint32_t _pad3;
+
+	struct {
+		UNION_STRUCT_START(32);
+		uint32_t err0 : 1;
+		uint32_t err1 : 1;
+		uint32_t err2 : 1;
+		uint32_t err3 : 1;
+		uint32_t _res : 28;
+		UNION_STRUCT_END;
+	} err;
+
+	uint32_t _pad4;
+
+	struct {
+		UNION_STRUCT_START(32);
+		uint32_t hrs0 : 1;
+		uint32_t hrs1 : 1;
+		uint32_t hrs2 : 1;
+		uint32_t hrs3 : 1;
+		uint32_t _res : 28;
+		UNION_STRUCT_END;
+	} hrs; // 4000_8034h
+
+	uint8_t _pad5[0x100 - 0x38];
+
+	struct {
+		UNION_STRUCT_START(8);
+		uint8_t chpri : 2;
+		uint8_t _res  : 4;
+		uint8_t dpa   : 1;
+		uint8_t ecp   : 1;
+		UNION_STRUCT_END;
+	} dchpri[4]; // 4000_8100h .. 4000_8103h
+
+	uint8_t _pad6[0x1000 - 0x104];
+
+	struct {
+		uint32_t saddr; // 4000_9000h .. 4000_9060h
+
+		uint16_t soff; // 4000_9004h .. 4000_9064h
+
+		struct {
+			UNION_STRUCT_START(16);
+			uint16_t dsize : 3;
+			uint16_t dmod  : 5;
+			enum {
+				DMA_TCD_ATTR_SSIZE_8_BIT    = 0x0,
+				DMA_TCD_ATTR_SSIZE_16_BIT   = 0x1,
+				DMA_TCD_ATTR_SSIZE_32_BIT   = 0x2,
+				DMA_TCD_ATTR_SSIZE_16_BYTES = 0x4,
+				DMA_TCD_ATTR_SSIZE_32_BYTES = 0x5,
+			} ssize        : 3;
+			uint16_t smod  : 5;
+			UNION_STRUCT_END;
+		} attr; // 4000_9006h .. 4000_9066h
+
+		union {
+			struct {
+				UNION_STRUCT_START(32);
+				uint32_t nbytes;
+				UNION_STRUCT_END;
+			} nbytes_mlno;
+			struct {
+				UNION_STRUCT_START(32);
+				uint32_t nbytes : 30;
+				uint32_t dmloe  : 1;
+				uint32_t smloe  : 1;
+				UNION_STRUCT_END;
+			} nbytes_mloffno;
+			struct {
+				UNION_STRUCT_START(32);
+				uint32_t nbytes : 9;
+				uint32_t mloff  : 21;
+				uint32_t dmloe  : 1;
+				uint32_t smloe  : 1;
+				UNION_STRUCT_END;
+			} nbytes_mloffyes;
+		}; // 4000_9008h .. 4000_9068h
+
+		uint32_t slast; // 4000_900Ch .. 4000_906Ch
+
+		uint32_t daddr; // 4000_9010h .. 4000_9070h
+
+		uint16_t doff; // 4000_9014h .. 4000_9074h
+
+		union {
+			struct {
+				UNION_STRUCT_START(16);
+				uint16_t citer  : 9;
+				uint16_t linkch : 2;
+				uint16_t _res   : 4;
+				uint16_t elink  : 1;
+				UNION_STRUCT_END;
+			} citer_elinkyes;
+			struct {
+				UNION_STRUCT_START(16);
+				uint16_t citer  : 15;
+				uint16_t elink  : 1;
+				UNION_STRUCT_END;
+			} citer_elinkno;
+		}; // 4000_9016h .. 4000_9076h
+
+		uint32_t dlastsga; // 4000_9018h .. 4000_9078h
+
+		struct {
+			UNION_STRUCT_START(16);
+			uint16_t start       : 1;
+			uint16_t intmajor    : 1;
+			uint16_t inthalf     : 1;
+			uint16_t dreq        : 1;
+			uint16_t esg         : 1;
+			uint16_t majorrelink : 1;
+			uint16_t active      : 1;
+			uint16_t done        : 1;
+			uint16_t majorlinkch : 1;
+			uint16_t _res        : 4;
+			uint16_t bwc         : 2;
+			UNION_STRUCT_END;
+		} csr; // 4000_901Ch .. 4000_907Ch
+
+		union {
+			struct {
+				UNION_STRUCT_START(16);
+				uint16_t biter  : 9;
+				uint16_t linkch : 2;
+				uint16_t _res   : 4;
+				uint16_t elink  : 1;
+				UNION_STRUCT_END;
+			} biter_elinkyes;
+			struct {
+				UNION_STRUCT_START(16);
+				uint16_t biter : 15;
+				uint16_t elink  : 1;
+				UNION_STRUCT_END;
+			} biter_elinkno;
+		}; // 4000_901Eh .. 4000_907Eh (TCD4_BITER_ELINKYES 4000_909Eh makes no sense)
+	} tcd[4];
+};
+
+CTASSERT_SIZE_BYTE(struct DMA_t, 0x40009080 - 0x40008000);
+
+struct DMAMUX_t {
+	UNION_STRUCT_START(8);
+	uint8_t source : 6;
+	uint8_t trig : 1;
+	uint8_t enbl : 1;
+	UNION_STRUCT_END;
+};
+
+CTASSERT_SIZE_BYTE(struct DMAMUX_t, 1);
+
+extern volatile struct DMA_t DMA;
+extern volatile struct DMAMUX_t DMAMUX0[16];
