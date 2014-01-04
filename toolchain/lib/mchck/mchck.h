@@ -12,3 +12,5 @@
 #include <mchck/pit.h>
 #include <mchck/rtc.h>
 #include <mchck/spiflash.h>
+#include <mchck/dma.h>
+
