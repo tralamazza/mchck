@@ -259,14 +259,18 @@ struct DMA_t {
 
 		union {
 			struct {
+				UNION_STRUCT_START(16);
 				uint16_t biter  : 9;
 				uint16_t linkch : 2;
 				uint16_t _res   : 4;
 				uint16_t elink  : 1;
+				UNION_STRUCT_END;
 			} elinkyes;
 			struct {
-				uint16_t biter : 15;
+				UNION_STRUCT_START(16);
+				uint16_t biter  : 15;
 				uint16_t elink  : 1;
+				UNION_STRUCT_END;
 			} elinkno;
 		} biter; // 4000_901Eh .. 4000_907Eh (TCD4_BITER_ELINKYES 4000_909Eh makes no sense)
 	} tcd[4];
@@ -277,8 +281,8 @@ CTASSERT_SIZE_BYTE(struct DMA_t, 0x40009080 - 0x40008000);
 struct DMAMUX_t {
 	UNION_STRUCT_START(8);
 	uint8_t source : 6;
-	uint8_t trig : 1;
-	uint8_t enbl : 1;
+	uint8_t trig   : 1;
+	uint8_t enbl   : 1;
 	UNION_STRUCT_END;
 };
 
