@@ -1,4 +1,10 @@
-#include <mchck.h>
+enum dma_transfer_size_t {
+	DMA_TRANSFER_SIZE_8_BIT    = 0x0,
+	DMA_TRANSFER_SIZE_16_BIT   = 0x1,
+	DMA_TRANSFER_SIZE_32_BIT   = 0x2,
+	DMA_TRANSFER_SIZE_16_BYTES = 0x4,
+	DMA_TRANSFER_SIZE_32_BYTES = 0x5
+};
 
 struct DMA_t {
 	struct {
@@ -73,7 +79,7 @@ struct DMA_t {
 
 	struct {
 		UNION_STRUCT_START(8);
-		uint8_t seei : 1;
+		uint8_t seei : 2;
 		uint8_t _res : 4;
 		uint8_t saee : 1;
 		uint8_t nop  : 1;
@@ -82,7 +88,7 @@ struct DMA_t {
 
 	struct {
 		UNION_STRUCT_START(8);
-		uint8_t cerq : 1;
+		uint8_t cerq : 2;
 		uint8_t _res : 4;
 		uint8_t caer : 1;
 		uint8_t nop  : 1;
@@ -91,7 +97,7 @@ struct DMA_t {
 
 	struct {
 		UNION_STRUCT_START(8);
-		uint8_t serq : 1;
+		uint8_t serq : 2;
 		uint8_t _res : 4;
 		uint8_t saer : 1;
 		uint8_t nop  : 1;
@@ -100,7 +106,7 @@ struct DMA_t {
 
 	struct {
 		UNION_STRUCT_START(8);
-		uint8_t cdne : 1;
+		uint8_t cdne : 2;
 		uint8_t _res : 4;
 		uint8_t cadn : 1;
 		uint8_t nop  : 1;
@@ -109,7 +115,7 @@ struct DMA_t {
 
 	struct {
 		UNION_STRUCT_START(8);
-		uint8_t ssrt : 1;
+		uint8_t ssrt : 2;
 		uint8_t _res : 4;
 		uint8_t sast : 1;
 		uint8_t nop  : 1;
@@ -118,7 +124,7 @@ struct DMA_t {
 
 	struct {
 		UNION_STRUCT_START(8);
-		uint8_t cerr : 1;
+		uint8_t cerr : 2;
 		uint8_t _res : 4;
 		uint8_t caei : 1;
 		uint8_t nop  : 1;
@@ -127,7 +133,7 @@ struct DMA_t {
 
 	struct {
 		UNION_STRUCT_START(8);
-		uint8_t cint : 1;
+		uint8_t cint : 2;
 		uint8_t _res : 4;
 		uint8_t cair : 1;
 		uint8_t nop  : 1;
@@ -183,48 +189,36 @@ struct DMA_t {
 
 	uint8_t _pad6[0x1000 - 0x104];
 
-	struct {
+	struct DMA_TCD_t {
 		uint32_t saddr; // 4000_9000h .. 4000_9060h
 
 		uint16_t soff; // 4000_9004h .. 4000_9064h
 
 		struct {
 			UNION_STRUCT_START(16);
-			uint16_t dsize : 3;
-			uint16_t dmod  : 5;
-			enum {
-				DMA_TCD_ATTR_SSIZE_8_BIT    = 0x0,
-				DMA_TCD_ATTR_SSIZE_16_BIT   = 0x1,
-				DMA_TCD_ATTR_SSIZE_32_BIT   = 0x2,
-				DMA_TCD_ATTR_SSIZE_16_BYTES = 0x4,
-				DMA_TCD_ATTR_SSIZE_32_BYTES = 0x5,
-			} ssize        : 3;
-			uint16_t smod  : 5;
+			enum dma_transfer_size_t dsize : 3;
+			uint16_t dmod                  : 5;
+			enum dma_transfer_size_t ssize : 3;
+			uint16_t smod                  : 5;
 			UNION_STRUCT_END;
 		} attr; // 4000_9006h .. 4000_9066h
 
 		union {
 			struct {
-				UNION_STRUCT_START(32);
 				uint32_t nbytes;
-				UNION_STRUCT_END;
-			} nbytes_mlno;
+			} mlno;
 			struct {
-				UNION_STRUCT_START(32);
 				uint32_t nbytes : 30;
 				uint32_t dmloe  : 1;
 				uint32_t smloe  : 1;
-				UNION_STRUCT_END;
-			} nbytes_mloffno;
+			} mloffno;
 			struct {
-				UNION_STRUCT_START(32);
 				uint32_t nbytes : 9;
 				uint32_t mloff  : 21;
 				uint32_t dmloe  : 1;
 				uint32_t smloe  : 1;
-				UNION_STRUCT_END;
-			} nbytes_mloffyes;
-		}; // 4000_9008h .. 4000_9068h
+			} mloffyes;
+		} nbytes; // 4000_9008h .. 4000_9068h
 
 		uint32_t slast; // 4000_900Ch .. 4000_906Ch
 
@@ -234,20 +228,16 @@ struct DMA_t {
 
 		union {
 			struct {
-				UNION_STRUCT_START(16);
 				uint16_t citer  : 9;
 				uint16_t linkch : 2;
 				uint16_t _res   : 4;
 				uint16_t elink  : 1;
-				UNION_STRUCT_END;
-			} citer_elinkyes;
+			} elinkyes;
 			struct {
-				UNION_STRUCT_START(16);
 				uint16_t citer  : 15;
 				uint16_t elink  : 1;
-				UNION_STRUCT_END;
-			} citer_elinkno;
-		}; // 4000_9016h .. 4000_9076h
+			} elinkno;
+		} citer; // 4000_9016h .. 4000_9076h
 
 		uint32_t dlastsga; // 4000_9018h .. 4000_9078h
 
@@ -261,7 +251,7 @@ struct DMA_t {
 			uint16_t majorrelink : 1;
 			uint16_t active      : 1;
 			uint16_t done        : 1;
-			uint16_t majorlinkch : 1;
+			uint16_t majorlinkch : 2;
 			uint16_t _res        : 4;
 			uint16_t bwc         : 2;
 			UNION_STRUCT_END;
@@ -269,20 +259,16 @@ struct DMA_t {
 
 		union {
 			struct {
-				UNION_STRUCT_START(16);
 				uint16_t biter  : 9;
 				uint16_t linkch : 2;
 				uint16_t _res   : 4;
 				uint16_t elink  : 1;
-				UNION_STRUCT_END;
-			} biter_elinkyes;
+			} elinkyes;
 			struct {
-				UNION_STRUCT_START(16);
 				uint16_t biter : 15;
 				uint16_t elink  : 1;
-				UNION_STRUCT_END;
-			} biter_elinkno;
-		}; // 4000_901Eh .. 4000_907Eh (TCD4_BITER_ELINKYES 4000_909Eh makes no sense)
+			} elinkno;
+		} biter; // 4000_901Eh .. 4000_907Eh (TCD4_BITER_ELINKYES 4000_909Eh makes no sense)
 	} tcd[4];
 };
 
