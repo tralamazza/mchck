@@ -278,11 +278,55 @@ struct DMA_t {
 
 CTASSERT_SIZE_BYTE(struct DMA_t, 0x40009080 - 0x40008000);
 
+enum dma_mux_source_t {
+	DMA_MUX_SRC_UART0_RECV = 0x2,
+	DMA_MUX_SRC_UART0_TRNS = 0x3,
+	DMA_MUX_SRC_UART1_RECV = 0x4,
+	DMA_MUX_SRC_UART1_TRNS = 0x5,
+	DMA_MUX_SRC_UART2_RECV = 0x6,
+	DMA_MUX_SRC_UART2_TRNS = 0x7,
+	DMA_MUX_SRC_I2S_RECV   = 0xe,
+	DMA_MUX_SRC_I2S_TRNS   = 0xf,
+	DMA_MUX_SRC_SPI0_RECV  = 0x10,
+	DMA_MUX_SRC_SPI0_TRNS  = 0x11,
+	DMA_MUX_SRC_I2C0       = 0x16,
+	DMA_MUX_SRC_FTM0_CH0   = 0x18,
+	DMA_MUX_SRC_FTM0_CH1   = 0x19,
+	DMA_MUX_SRC_FTM0_CH2   = 0x1a,
+	DMA_MUX_SRC_FTM0_CH3   = 0x1b,
+	DMA_MUX_SRC_FTM0_CH4   = 0x1c,
+	DMA_MUX_SRC_FTM0_CH5   = 0x1d,
+	DMA_MUX_SRC_FTM0_CH6   = 0x1e,
+	DMA_MUX_SRC_FTM0_CH7   = 0x1f,
+	DMA_MUX_SRC_FTM1_CH0   = 0x20,
+	DMA_MUX_SRC_FTM2_CH1   = 0x21,
+	DMA_MUX_SRC_ADC0       = 0x28,
+	DMA_MUX_SRC_CMP0       = 0x2a,
+	DMA_MUX_SRC_CMP1       = 0x2b,
+	DMA_MUX_SRC_CMT        = 0x2f,
+	DMA_MUX_SRC_PDB        = 0x30,
+	DMA_MUX_SRC_PORTA      = 0x31,
+	DMA_MUX_SRC_PORTB      = 0x32,
+	DMA_MUX_SRC_PORTC      = 0x33,
+	DMA_MUX_SRC_PORTD      = 0x34,
+	DMA_MUX_SRC_PORTE      = 0x35,
+	DMA_MUX_SRC_ALWAYS0    = 0x36,
+	DMA_MUX_SRC_ALWAYS1    = 0x37,
+	DMA_MUX_SRC_ALWAYS2    = 0x38,
+	DMA_MUX_SRC_ALWAYS3    = 0x39,
+	DMA_MUX_SRC_ALWAYS4    = 0x3a,
+	DMA_MUX_SRC_ALWAYS5    = 0x3b,
+	DMA_MUX_SRC_ALWAYS6    = 0x3c,
+	DMA_MUX_SRC_ALWAYS7    = 0x3d,
+	DMA_MUX_SRC_ALWAYS8    = 0x3e,
+	DMA_MUX_SRC_ALWAYS9    = 0x3f
+};
+
 struct DMAMUX_t {
 	UNION_STRUCT_START(8);
-	uint8_t source : 6;
-	uint8_t trig   : 1;
-	uint8_t enbl   : 1;
+	enum dma_mux_source_t source : 6;
+	uint8_t trig                 : 1;
+	uint8_t enbl                 : 1;
 	UNION_STRUCT_END;
 };
 
