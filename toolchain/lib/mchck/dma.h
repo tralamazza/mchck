@@ -14,7 +14,7 @@ enum dma_arbitration_t {
 #define DMA_ERR_CHNL_PRIO    0x100
 #define DMA_ERR_TRNFS_CANCL  0x200
 
-typedef void (dma_callback)(uint8_t ch, uint32_t err);
+typedef void (dma_callback)(uint8_t ch, uint32_t err, uint8_t major);
 
 void dma_init(void);
 void dma_set_arbitration(enum dma_arbitration_t arb);
@@ -22,7 +22,7 @@ void dma_from(uint8_t ch, void* addr, size_t count, enum dma_transfer_size_t tsi
 void dma_to(uint8_t ch, void* addr, size_t count, enum dma_transfer_size_t tsize, size_t off, uint8_t mod);
 void dma_minor_loop(uint8_t ch, uint16_t iter);
 void dma_major_loop(uint8_t ch, uint16_t iter);
-void dma_start(uint8_t ch, dma_callback* cb);
+void dma_start(uint8_t ch, enum dma_mux_source_t source, uint8_t tri, dma_callback* cb);
 void dma_set_priority(uint8_t ch, uint8_t prio);
 void dma_enable_channel_preemption(uint8_t ch, uint8_t on);
 void dma_enable_preempt_ability(uint8_t ch, uint8_t on);

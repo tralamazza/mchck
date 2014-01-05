@@ -73,10 +73,17 @@ dma_major_loop(uint8_t ch, uint16_t iter)
 }
 
 void
-dma_start(uint8_t ch, dma_callback* cb)
+dma_start(uint8_t ch, enum dma_mux_source_t source, uint8_t tri, dma_callback* cb)
 {
 	ctx[ch].cb = cb;
+	volatile struct DMAMUX_t *mux = &DMAMUX0[ch];
+	mux->trig = 0;
+	mux->enbl = 0;
+	mux->source = source;
 	DMA.tcd[ch].csr.start = 1;
+	if (mux->trig)
+		mux->trig = 1;
+	mux->enbl = 1;
 }
 
 void
@@ -129,6 +136,7 @@ DMA_error_Handler(void)
 		err |= DMA_ERR_CHNL_PRIO;
 	if (DMA.es.ecx)
 		err |= DMA_ERR_TRNFS_CANCL;
-	ctx[DMA.es.errchn].cb(DMA.es.errchn, err);
+	ctx[DMA.es.errchn].cb(DMA.es.errchn, err, 0);
 	DMA.cerr.cerr = DMA.es.errchn;
 }
+
