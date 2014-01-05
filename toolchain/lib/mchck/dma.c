@@ -14,21 +14,21 @@ dma_init(void)
 		tcd->soff = 0;
 		tcd->attr.raw = 0;
 		tcd->slast = 0;
-		tcd->doff = 0;
-		tcd->citer.elinkno.citer = 1;
-		tcd->citer.elinkno.elink = 0;
+		tcd->doff = 0; /* no dst offset */
+		tcd->citer.elinkno.citer = 1; /* 1 major loop iteration */
+		tcd->citer.elinkno.elink = 0; /* no minor loop linking */
 		tcd->dlastsga = 0;
 		tcd->csr.intmajor = 1; /* enable interrupt after biter finishes */
 		tcd->csr.majorlinkch = 0; /* don't chain (link) after biter */
 		tcd->csr.bwc = 0; /* no dma stalls */
-		tcd->biter.elinkno.biter = 1;
-		tcd->biter.elinkno.elink = 0;
+		tcd->biter.elinkno.biter = 1; /* 1 major loop iteration */
+		tcd->biter.elinkno.elink = 0; /* no minor loop linking */
 	}
 	DMA.seei.saee = 1; /* enable all error interrupts */
 	int_enable(IRQ_DMA0);
-	int_enable(IRQ_DMA1);
-	int_enable(IRQ_DMA2);
-	int_enable(IRQ_DMA3);
+	// int_enable(IRQ_DMA1);
+	// int_enable(IRQ_DMA2);
+	// int_enable(IRQ_DMA3);
 	int_enable(IRQ_DMA_error);
 }
 
@@ -59,17 +59,16 @@ dma_to(uint8_t ch, void* addr, size_t count, enum dma_transfer_size_t tsize, siz
 }
 
 void
-dma_minor_loop(uint8_t ch, uint16_t iter)
+dma_major_loop_count(uint8_t ch, uint16_t iter)
 {
-	DMA.tcd[ch].citer.elinkno.elink = 0;
-	DMA.tcd[ch].citer.elinkno.citer = iter;
-}
-
-void
-dma_major_loop(uint8_t ch, uint16_t iter)
-{
-	DMA.tcd[ch].biter.elinkno.elink = 0;
-	DMA.tcd[ch].biter.elinkno.biter = iter;
+	volatile struct DMA_TCD_t* tcd = &DMA.tcd[ch];
+	if (tcd->citer.elinkyes.elink) {
+		tcd->citer.elinkyes.citer = iter;
+		tcd->biter.elinkyes.biter = iter;
+	} else {
+		tcd->citer.elinkno.citer = iter;
+		tcd->biter.elinkno.biter = iter;
+	}
 }
 
 void
@@ -107,10 +106,13 @@ dma_enable_preempt_ability(uint8_t ch, uint8_t on)
 void
 DMA0_Handler(void)
 {
-
+	uint8_t ch = *(uint8_t*)&DMA._int;
+	uint8_t curr = DMA.tcd[ch].citer.elinkyes.elink ? DMA.tcd[ch].citer.elinkyes.citer : DMA.tcd[ch].citer.elinkno.citer;
+	ctx[ch].cb(ch, 0, curr);
+	DMA.cint.cint = ch; // clear
 }
 
-void
+/*void
 DMA1_Handler(void)
 {
 
@@ -126,7 +128,7 @@ void
 DMA3_Handler(void)
 {
 
-}
+}*/
 
 void
 DMA_error_Handler(void)
@@ -139,4 +141,3 @@ DMA_error_Handler(void)
 	ctx[DMA.es.errchn].cb(DMA.es.errchn, err, 0);
 	DMA.cerr.cerr = DMA.es.errchn;
 }
-
