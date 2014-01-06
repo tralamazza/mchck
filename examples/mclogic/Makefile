@@ -1,6 +1,6 @@
 PROG=	mclogic
 
-SRCS+=	sump.c
+SRCS+=	blink.c sump.c
 
 ifndef VUSB
 SRCS+=	main-kinetis.c
