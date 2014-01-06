@@ -1,4 +1,5 @@
 #include "sump.h"
+#include "blink.h"
 
 enum sump_cmd_t {
 	/* short commands */
@@ -26,7 +27,7 @@ static uint8_t buffer[BUFFER_SIZE];
 
 static const uint8_t PROTOCOL_VERSION[4] = { '1', 'A', 'L', 'S' };
 
-static uint8_t counter;
+static volatile uint8_t buf_pos;
 
 static uint8_t METADATA[] = {
 	0x01, 'M', 'C', 'H', 'C', 'K', 0x00, // device name
@@ -72,6 +73,7 @@ struct sump_context {
 	uint16_t delay_count;
 	uint8_t trigger;
 	uint8_t reset_count;
+	uint8_t ready;
 } ctx;
 
 static
@@ -87,21 +89,29 @@ uint32_t read_uint32(uint8_t n, uint8_t* data)
 static
 void dma_handler(uint8_t ch, uint32_t err, uint8_t major)
 {
-	if (counter++ >= BUFFER_SIZE) {
+	if (err) {
+		onboard_led(ONBOARD_LED_OFF);
+		blink(3);
+	}
+	if (++buf_pos == BUFFER_SIZE) {
 		/* we reached the end of the buffer, stop the dma channel and the timer */
 		dma_cancel(DMA_CH_0);
 		pit_stop(PIT_0);
+		onboard_led(ONBOARD_LED_OFF);
+		/* reset buf_pos, we reuse it for sending data */
+		buf_pos = ctx.write(buffer, BUFFER_SIZE);
 	}
 }
 
 static void
 sump_arm()
 {
-	counter = 0;
+	buf_pos = 0;
 	/* setup timer, cycles = clock rate divider * (sysclock / max sample rate) - 1 */
 	pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, NULL);
 	/* dma is set to a "always on" source because we will fire it via timer */
 	dma_start(DMA_CH_0, DMA_MUX_SRC_ALWAYS0, 1, dma_handler);
+	onboard_led(ONBOARD_LED_ON);
 }
 
 void
@@ -123,11 +133,20 @@ sump_init(sump_writer *w)
 
 	dma_init();
 	/* set the dma to read the GPIOD 1x 8bits (byte) and
-	   move back 1 byte after reading (-1 offset) */
+	   move back 1 byte after reading (-1 address adjustment) */
 	dma_from(DMA_CH_0, (void*)&GPIOD, 1, DMA_TRANSFER_SIZE_8_BIT, 0, 0);
+	dma_from_addr_adj(DMA_CH_0, -1);
 	/* set the dma to write to our buffer, 1 byte at a time.
-	   we let the pointer move forward by 1 byte (no offset). */
+	   we let the pointer move forward by 1 byte (no address adjustment). */
 	dma_to(DMA_CH_0, &buffer, 1, DMA_TRANSFER_SIZE_8_BIT, 0, 0);
+}
+
+void
+sump_data_sent(size_t value)
+{
+	onboard_led(ONBOARD_LED_TOGGLE);
+	if ((value == CDC_TX_SIZE) && (buf_pos < BUFFER_SIZE))
+		buf_pos += ctx.write(buffer + buf_pos, BUFFER_SIZE);
 }
 
 void
