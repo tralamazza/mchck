@@ -39,33 +39,30 @@ pit_cycle(enum pit_id id)
 	return PIT.timer[id].cval;
 }
 
-static void
-common_handler(enum pit_id id)
-{
-	PIT.timer[id].tflg.tif = 1;
-	ctx[id].cb(id);
-}
+#define COMMON_HANDLER(id)		\
+	PIT.timer[id].tflg.tif = 1;	\
+	ctx[id].cb(id);				\
 
 void
 PIT0_Handler(void)
 {
-	common_handler(PIT_0);
+	COMMON_HANDLER(PIT_0);
 }
 
 void
 PIT1_Handler(void)
 {
-	common_handler(PIT_1);
+	COMMON_HANDLER(PIT_1);
 }
 
 void
 PIT2_Handler(void)
 {
-	common_handler(PIT_2);
+	COMMON_HANDLER(PIT_2);
 }
 
 void
 PIT3_Handler(void)
 {
-	common_handler(PIT_3);
+	COMMON_HANDLER(PIT_3);
 }
