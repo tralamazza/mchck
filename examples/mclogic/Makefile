@@ -1,8 +1,7 @@
 PROG=	mclogic
 
-SRCS+=	blink.c sump.c
-
 ifndef VUSB
+SRCS+=	sump.c
 SRCS+=	main-kinetis.c
 else
 TARGET=	host

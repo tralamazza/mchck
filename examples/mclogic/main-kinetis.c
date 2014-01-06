@@ -1,5 +1,4 @@
 #include <mchck.h>
-#include "blink.h"
 #include "sump.h"
 #include "mclogic.desc.h"
 
@@ -27,8 +26,6 @@ init_vcdc(int config)
 void
 main(void)
 {
-	blink_init(100);
-	blink(2);
 	sump_init(write_data);
 	usb_init(&cdc_device);
 	sys_yield_for_frogs();
