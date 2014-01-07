@@ -30,7 +30,7 @@ Tested with sigrok-cli 0.4.0 and pulseview 0.1.0.
 
 sigrok-cli example:
 
-    $> sigrok-cli --driver=ols:conn=/dev/ttyACM0 --config external_clock=0 --config rle=0 -samples 1024
+    $> sigrok-cli --driver=ols:conn=/dev/ttyACM0 --config external_clock=0 --config rle=0 --samples 1024
 
 ###VUSB (for local testing)
 You can build a simple host mode demo using McHCK's VUSB (which doesn't require a mchck device):
