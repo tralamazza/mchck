@@ -1,6 +1,6 @@
 #McLogic
 
-A logic analyzer for the [mchck](mchck.org).
+A logic analyzer for the [mchck](https://mchck.org).
 
 ##Features
 
