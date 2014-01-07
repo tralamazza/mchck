@@ -1,5 +1,9 @@
 PROG=	mclogic
 
+ifdef SIGROK
+CFLAGS+=	-DSIGROK
+endif
+
 ifndef VUSB
 SRCS+=	sump.c
 SRCS+=	main-kinetis.c
