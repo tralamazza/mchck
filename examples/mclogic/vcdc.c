@@ -3,11 +3,12 @@
 
 #include "mclogic.desc.h"
 
-/* To test use sigrok-cli:
-	$> sigrok-cli --driver=ols:conn=/dev/ttyACM0 --config external_clock=0 --config rle=0 -samples 1024
-*/
-
 #define BUFFER_SIZE 4*1024
+
+struct divider_t {
+	uint32_t value : 24;
+	uint32_t _pad : 8;
+};
 
 static struct cdc_ctx cdc;
 
@@ -38,16 +39,6 @@ struct sump_flags_t {
 	uint8_t inverted : 1;
 	UNION_STRUCT_END;
 } flags;
-
-static uint32_t
-read_uint32(uint8_t n, uint8_t* data)
-{
-	uint32_t r = 0;
-	while (n-- > 0) {
-		r |= (data[n] << (n * 8)) & 0xff;
-	}
-	return r;
-}
 
 static void
 dump_data(uint8_t *data, size_t len)
@@ -93,10 +84,10 @@ new_data(uint8_t *data, size_t len)
 		cdc_write(METADATA, sizeof(METADATA), &cdc);
 		break;
 	case 0x80:
-		fprintf(stderr, "div=%u\n", read_uint32(3, data));
+		fprintf(stderr, "div=%u\n", ((struct divider_t*)data)->value);
 		break;
 	case 0x81:
-		fprintf(stderr, "rc=%u, dc=%u\n", read_uint32(2, data), read_uint32(2, &data[2]));
+		fprintf(stderr, "rc=%u, dc=%u\n", *(uint16_t*)data, *(uint16_t*)&data[2]);
 		break;
 	case 0x82:
 		flags.raw = data[0];
