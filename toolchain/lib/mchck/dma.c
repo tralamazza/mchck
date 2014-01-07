@@ -7,6 +7,8 @@ static struct dma_ctx_t {
 void
 dma_init(void)
 {
+	SIM.scgc6.dmamux = 1;
+	SIM.scgc7.dma = 1;
 	/* set some defaults */
 	int i;
 	for (i = 0; i < 4; i++) {
@@ -15,20 +17,20 @@ dma_init(void)
 		tcd->attr.raw = 0;
 		tcd->slast = 0;
 		tcd->doff = 0; /* no dst offset */
-		tcd->citer.elinkno.citer = 1; /* 1 major loop iteration */
 		tcd->citer.elinkno.elink = 0; /* no minor loop linking */
+		tcd->citer.elinkno.citer = 1; /* 1 major loop iteration */
 		tcd->dlastsga = 0;
 		tcd->csr.intmajor = 1; /* enable interrupt after biter finishes */
 		tcd->csr.majorlinkch = 0; /* don't chain (link) after biter */
 		tcd->csr.bwc = 0; /* no dma stalls */
-		tcd->biter.elinkno.biter = 1; /* 1 major loop iteration */
 		tcd->biter.elinkno.elink = 0; /* no minor loop linking */
+		tcd->biter.elinkno.biter = 1; /* 1 major loop iteration */
 	}
 	DMA.seei.saee = 1; /* enable all error interrupts */
 	int_enable(IRQ_DMA0);
-	// int_enable(IRQ_DMA1);
-	// int_enable(IRQ_DMA2);
-	// int_enable(IRQ_DMA3);
+	int_enable(IRQ_DMA1);
+	int_enable(IRQ_DMA2);
+	int_enable(IRQ_DMA3);
 	int_enable(IRQ_DMA_error);
 }
 
@@ -46,6 +48,7 @@ dma_from(enum dma_channel ch, void* addr, size_t count, enum dma_transfer_size_t
 	tcd->soff = off;
 	tcd->attr.ssize = tsize;
 	tcd->attr.smod = mod;
+	tcd->nbytes.mlno.nbytes = count * (1 << tsize);
 	tcd->slast = -(1 << tsize); // adjust to tsize by default
 }
 
@@ -57,6 +60,7 @@ dma_to(enum dma_channel ch, void* addr, size_t count, enum dma_transfer_size_t t
 	tcd->doff = off;
 	tcd->attr.dsize = tsize;
 	tcd->attr.dmod = mod;
+	tcd->nbytes.mlno.nbytes = count * (1 << tsize);
 	tcd->dlastsga = -(1 << tsize); // adjust to tsize by default
 }
 
@@ -90,8 +94,8 @@ dma_start(enum dma_channel ch, enum dma_mux_source_t source, uint8_t tri, dma_cb
 void
 dma_cancel(enum dma_channel ch)
 {
-	if (!DMA.tcd[ch].csr.active)
-		DMA.cr.cx = 1; // .cr cannot be changed on active channels
+	DMAMUX0[ch].enbl = 0;
+	DMA.cr.cx = 1;
 }
 
 void
@@ -124,32 +128,40 @@ dma_to_addr_adj(enum dma_channel ch, uint32_t off)
 	DMA.tcd[ch].dlastsga = off;
 }
 
+#define COMMON_HANDLER(ch)		      \
+	uint8_t curr = DMA.tcd[ch].citer.elinkyes.elink ? DMA.tcd[ch].citer.elinkyes.citer : DMA.tcd[ch].citer.elinkno.citer;  \
+	ctx[ch].cb(ch, 0, curr);	      \
+	/* BEGIN freescale 4588 workaround */ \
+	DMA.tcd[ch].csr.dreq = 0;	      \
+	DMAMUX0[ch].enbl = 0;		      \
+	DMAMUX0[ch].enbl = 1;		      \
+	DMA.serq.serq = ch;		      \
+	/* END freescale 4588 workaround */   \
+	DMA.cint.cint = ch;		      \
+
 void
 DMA0_Handler(void)
 {
-	enum dma_channel ch = *(uint8_t*)&DMA._int;
-	uint8_t curr = DMA.tcd[ch].citer.elinkyes.elink ? DMA.tcd[ch].citer.elinkyes.citer : DMA.tcd[ch].citer.elinkno.citer;
-	ctx[ch].cb(ch, 0, curr);
-	DMA.cint.cint = ch; // clear
+	COMMON_HANDLER(0);
 }
 
-/*void
+void
 DMA1_Handler(void)
 {
-
+	COMMON_HANDLER(1);
 }
 
 void
 DMA2_Handler(void)
 {
-
+	COMMON_HANDLER(2);
 }
 
 void
 DMA3_Handler(void)
 {
-
-}*/
+	COMMON_HANDLER(3);
+}
 
 void
 DMA_error_Handler(void)
