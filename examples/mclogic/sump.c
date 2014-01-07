@@ -141,8 +141,7 @@ sump_arm()
 	onboard_led(ONBOARD_LED_ON);
 
 	/* setup timer, cycles = clock rate divider * (sysclock / max sample rate) - 1 */
-	pit_start(PIT_0, 50 - 1, pit_handler);
-	// pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, NULL);
+	pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, pit_handler);
 
 	/* dma is set to a "always on" source because we will fire it via timer */
 	// dma_start(DMA_CH_0, DMA_MUX_SRC_ALWAYS0, 1, dma_handler);
@@ -224,6 +223,9 @@ sump_process(uint8_t* data, size_t len)
 		break;
 	case SUMP_CMD_SET_DIVIDER:
 		ctx.divider = read_uint32(3, data); // read 3 bytes
+		#ifdef SIGROK
+		ctx.divider = (ctx.divider + 1) / 100;
+		#endif
 		break;
 	case SUMP_CMD_SET_READ_DELAY_COUNT:
 		ctx.read_count = read_uint32(2, data); // read first 2 bytes
