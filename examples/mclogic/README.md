@@ -9,7 +9,7 @@ A logic analyzer for the [mchck](https://mchck.org).
 - 4096 bytes of memory
 - ~~Triggers~~ (**WIP**)
 - ~~RLE~~ (**WIP**)
-
+- ~~DMA transfers~~ (**WIP**)
 
 ##Building
 
