@@ -121,6 +121,8 @@ sump_reset()
 	ctx.trigger = 0;
 	ctx.reset_count = 0;
 	buf_pos = 0;
+	pit_stop(PIT_0);
+	onboard_led(ONBOARD_LED_OFF);
 }
 
 static void
