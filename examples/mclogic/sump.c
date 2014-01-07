@@ -107,10 +107,10 @@ sump_reset()
 static void
 dma_handler(uint8_t ch, uint32_t err, uint8_t major)
 {
-	if ((++buf_pos >= BUFFER_SIZE) /*|| err*/) {
+	if ((++buf_pos >= BUFFER_SIZE) || err) {
+		onboard_led(ONBOARD_LED_OFF);
 		dma_cancel(DMA_CH_0);
 		pit_stop(PIT_0);
-		onboard_led(ONBOARD_LED_OFF);
 		buf_pos = ctx.write(buffer, BUFFER_SIZE);
 	}
 }
@@ -136,8 +136,13 @@ sump_arm()
 	onboard_led(ONBOARD_LED_ON);
 	/* setup timer, cycles = clock rate divider * (sysclock / max sample rate) - 1 */
 #ifdef MCLOGIC_DMA
+	/* set the dma to write to our buffer, 1 byte at a time.
+	   we let the pointer move forward by 1 byte (no address adjustment). */
+	dma_to(DMA_CH_0, buffer, 1, DMA_TRANSFER_SIZE_8_BIT, 0, 0);
+	dma_to_addr_adj(DMA_CH_0, 0);
+	/* configure PIT */
 	pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, NULL);
-	/* dma is set to a "always on" source because we will fire it via timer */
+	/* dma has to be set to a "always on" source because PIT fires it */
 	dma_start(DMA_CH_0, DMA_MUX_SRC_ALWAYS0, 1, dma_handler);
 #else
 	pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, pit_handler_sample);
@@ -165,10 +170,6 @@ sump_init(sump_writer *w)
 	/* set the dma to read the GPIOD 1x 8bits (byte) and
 	   move back 1 byte after reading (-1 address adjustment) */
 	dma_from(DMA_CH_0, (void*)&GPIOD, 1, DMA_TRANSFER_SIZE_8_BIT, 0, 0);
-	dma_from_addr_adj(DMA_CH_0, -1);
-	/* set the dma to write to our buffer, 1 byte at a time.
-	   we let the pointer move forward by 1 byte (no address adjustment). */
-	dma_to(DMA_CH_0, &buffer, 1, DMA_TRANSFER_SIZE_8_BIT, 0, 0);
 #endif
 }
 
@@ -237,3 +238,4 @@ sump_process(uint8_t* data, size_t len)
 		break;
 	}
 }
+
