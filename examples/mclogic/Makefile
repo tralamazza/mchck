@@ -1,7 +1,11 @@
 PROG=	mclogic
 
 ifdef SIGROK
-CFLAGS+=	-DSIGROK
+CFLAGS+=	-DMCLOGIC_SIGROK
+endif
+
+ifdef DMA
+CFLAGS+=	-DMCLOGIC_DMA
 endif
 
 ifndef VUSB

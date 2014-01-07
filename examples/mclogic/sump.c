@@ -90,23 +90,6 @@ struct divider_t {
 	uint32_t _pad : 8;
 };
 
-// static void
-// dma_handler(uint8_t ch, uint32_t err, uint8_t major)
-// {
-// 	if (err) {
-// 		onboard_led(ONBOARD_LED_OFF);
-// 		blink(3);
-// 	}
-// 	if (++buf_pos == BUFFER_SIZE) {
-// 		 we reached the end of the buffer, stop the dma channel and the timer
-// 		dma_cancel(DMA_CH_0);
-// 		pit_stop(PIT_0);
-// 		onboard_led(ONBOARD_LED_OFF);
-// 		/* reset buf_pos, we reuse it for sending data */
-// 		buf_pos = ctx.write(buffer, BUFFER_SIZE);
-// 	}
-// }
-
 static void
 sump_reset()
 {
@@ -120,8 +103,22 @@ sump_reset()
 	onboard_led(ONBOARD_LED_OFF);
 }
 
+#ifdef MCLOGIC_DMA
 static void
-pit_handler(enum pit_id id)
+dma_handler(uint8_t ch, uint32_t err, uint8_t major)
+{
+	if ((++buf_pos >= BUFFER_SIZE) /*|| err*/) {
+		dma_cancel(DMA_CH_0);
+		pit_stop(PIT_0);
+		onboard_led(ONBOARD_LED_OFF);
+		buf_pos = ctx.write(buffer, BUFFER_SIZE);
+	}
+}
+
+#else
+
+static void
+pit_handler_sample(enum pit_id id)
 {
 	buffer[buf_pos++] = GPIOD.pdir;
 	if (buf_pos >= BUFFER_SIZE) {
@@ -130,18 +127,21 @@ pit_handler(enum pit_id id)
 		buf_pos = ctx.write(buffer, BUFFER_SIZE);
 	}
 }
+#endif
 
 static void
 sump_arm()
 {
 	buf_pos = 0;
 	onboard_led(ONBOARD_LED_ON);
-
 	/* setup timer, cycles = clock rate divider * (sysclock / max sample rate) - 1 */
-	pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, pit_handler);
-
+#ifdef MCLOGIC_DMA
+	pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, NULL);
 	/* dma is set to a "always on" source because we will fire it via timer */
-	// dma_start(DMA_CH_0, DMA_MUX_SRC_ALWAYS0, 1, dma_handler);
+	dma_start(DMA_CH_0, DMA_MUX_SRC_ALWAYS0, 1, dma_handler);
+#else
+	pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, pit_handler_sample);
+#endif
 }
 
 void
@@ -160,15 +160,16 @@ sump_init(sump_writer *w)
 	gpio_dir(PIN_PTD7, GPIO_INPUT);
 
 	pit_init();
+#ifdef MCLOGIC_DMA
 	dma_init();
-
 	/* set the dma to read the GPIOD 1x 8bits (byte) and
 	   move back 1 byte after reading (-1 address adjustment) */
-	// dma_from(DMA_CH_0, (void*)&GPIOD, 1, DMA_TRANSFER_SIZE_8_BIT, 0, 0);
-	// dma_from_addr_adj(DMA_CH_0, -1);
+	dma_from(DMA_CH_0, (void*)&GPIOD, 1, DMA_TRANSFER_SIZE_8_BIT, 0, 0);
+	dma_from_addr_adj(DMA_CH_0, -1);
 	/* set the dma to write to our buffer, 1 byte at a time.
 	   we let the pointer move forward by 1 byte (no address adjustment). */
-	// dma_to(DMA_CH_0, &buffer, 1, DMA_TRANSFER_SIZE_8_BIT, 0, 0);
+	dma_to(DMA_CH_0, &buffer, 1, DMA_TRANSFER_SIZE_8_BIT, 0, 0);
+#endif
 }
 
 void
@@ -220,14 +221,14 @@ sump_process(uint8_t* data, size_t len)
 		break;
 	case SUMP_CMD_SET_DIVIDER:
 		ctx.divider = ((struct divider_t*)data)->value;
-		#ifdef SIGROK
+#ifdef MCLOGIC_SIGROK
 		ctx.divider = (ctx.divider + 1) / 100;
-		#endif
+#endif
 		break;
 	case SUMP_CMD_SET_READ_DELAY_COUNT:
-		ctx.read_count = *(uint16_t*)data; // read first 2 bytes
+		ctx.read_count = ((*(uint16_t*)data) + 1) * 4; // read first 2 bytes
 		data += 2;
-		ctx.delay_count = *(uint16_t*)data; // read next 2 bytes
+		ctx.delay_count = ((*(uint16_t*)data) + 1) * 4; // read next 2 bytes
 		break;
 	case SUMP_CMD_SET_FLAGS:
 		ctx.flags.raw = data[0];
