@@ -85,15 +85,10 @@ struct sump_context {
 	.reset_count = 0
 };
 
-static uint32_t
-read_uint32(uint8_t n, uint8_t* data)
-{
-	uint32_t r = 0;
-	while (n-- > 0) {
-		r |= (data[n] << (n * 8)) & 0xff;
-	}
-	return r;
-}
+struct divider_t {
+	uint32_t value : 24;
+	uint32_t _pad : 8;
+};
 
 // static void
 // dma_handler(uint8_t ch, uint32_t err, uint8_t major)
@@ -221,18 +216,18 @@ sump_process(uint8_t* data, size_t len)
 		ctx.trigger = data[0];
 		break;
 	case SUMP_CMD_SET_TRIGGER_CFG:
-		ctx.trigger_cfg.raw = read_uint32(4, data);
+		ctx.trigger_cfg.raw = *(uint32_t*)data;
 		break;
 	case SUMP_CMD_SET_DIVIDER:
-		ctx.divider = read_uint32(3, data); // read 3 bytes
+		ctx.divider = ((struct divider_t*)data)->value;
 		#ifdef SIGROK
 		ctx.divider = (ctx.divider + 1) / 100;
 		#endif
 		break;
 	case SUMP_CMD_SET_READ_DELAY_COUNT:
-		ctx.read_count = read_uint32(2, data); // read first 2 bytes
+		ctx.read_count = *(uint16_t*)data; // read first 2 bytes
 		data += 2;
-		ctx.delay_count = read_uint32(2, data); // read next 2 bytes
+		ctx.delay_count = *(uint16_t*)data; // read next 2 bytes
 		break;
 	case SUMP_CMD_SET_FLAGS:
 		ctx.flags.raw = data[0];
