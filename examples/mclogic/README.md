@@ -12,27 +12,25 @@ A logic analyzer for the [mchck](https://mchck.org).
 - ~~DMA transfers~~ (**WIP, you can test passing DMA=1**)
 
 ##Building
-
-Unfortunately you have to target the mclogic to your client UI.
-
+There are 3 basic ways of building McLogic.
 
 ###Standard
 This should work with OLS (**untested**).
 
     $> make flash
 
-NOTE: Don't forget ot copy *old.profile-mchck.cfg* to the plugins folder.
+NOTE: Don't forget ot copy *ols.profile-mchck.cfg* to the OLS plugins folder.
 
 ###sigrok-cli/Pulseview
 Tested with sigrok-cli 0.4.0 and pulseview 0.1.0.
 
     $> make SIGROK=1 flash
 
-sigrok-cli example:
+A sigrok-cli example:
 
     $> sigrok-cli --driver=ols:conn=/dev/ttyACM0 --config external_clock=0 --config rle=0 --config samplerate=1M --samples 1024
 
-Pulseview:
+Pulseview setup:
 
 - Select *File->Connect to Device...*
 - Select *Openbench Logic Sniffer (ols)*
