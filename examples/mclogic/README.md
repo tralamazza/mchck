@@ -22,6 +22,7 @@ This should work with OLS (**untested**).
 NOTE: Don't forget ot copy *ols.profile-mchck.cfg* to the OLS plugins folder.
 
 ###sigrok-cli/Pulseview
+We will use the "ols" driver in [sigrok](http://sigrok.com).
 Tested with sigrok-cli 0.4.0 and pulseview 0.1.0.
 
     $> make SIGROK=1 flash
