@@ -176,12 +176,14 @@ sump_arm()
 		uint32_t mask, i;
 		for (i = 0; i < NUM_PROBES; i++) {
 			mask = i << 1; /* used to check if the port is used as trigger and its value */
+			enum PCR_IRQC_t irqc;
 			if (ctx.trigger_mask & mask) {
-				/* PIN_PTD0 + i = assumes port addr are contiguous */
-				pin_physport_from_pin(PIN_PTD0 + i)->pcr[pin_physpin_from_pin(PIN_PTD0 + i)].irqc = ctx.trigger & mask ?
-					PCR_IRQC_INT_ONE :
-					PCR_IRQC_INT_ZERO;
+				irqc = ctx.trigger & mask ? PCR_IRQC_INT_ONE : PCR_IRQC_INT_ZERO;
+			} else {
+				irqc = PCR_IRQC_DISABLED;
 			}
+			/* PIN_PTD0 + i = assumes port addr are contiguous */
+			pin_physport_from_pin(PIN_PTD0 + i)->pcr[pin_physpin_from_pin(PIN_PTD0 + i)].irqc = irqc;
 		}
 		int_enable(IRQ_PORTD);
 	} else {
