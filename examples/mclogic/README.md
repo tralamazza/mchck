@@ -7,9 +7,9 @@ A logic analyzer for the [mchck](https://mchck.org).
 - 1MHz max sample rate
 - 8 probes
 - 4096 bytes of memory
-- ~~Triggers~~ (**WIP**)
+- Triggers (*serial only*)
 - ~~RLE~~ (**WIP**)
-- ~~DMA transfers~~ (**WIP**)
+- ~~DMA transfers~~ (**WIP, you can test passing DMA=1**)
 
 ##Building
 
@@ -46,7 +46,7 @@ Make sure your UI is set to use:
 
 - "internal" clock
 - no RLE
-- no triggers
+- serial trigger
 - no filter
 - no demux
 - 8 probes
