@@ -78,15 +78,15 @@ dma_major_loop_count(enum dma_channel ch, uint16_t iter)
 }
 
 void
-dma_start(enum dma_channel ch, enum dma_mux_source_t source, uint8_t tri, dma_cb* cb)
+dma_start(enum dma_channel ch, enum dma_mux_source_t source, uint8_t trig, dma_cb* cb)
 {
 	ctx[ch].cb = cb;
 	volatile struct DMAMUX_t *mux = &DMAMUX0[ch];
-	mux->trig = 0;
 	mux->enbl = 0;
+	mux->trig = 0;
 	mux->source = source;
 	DMA.tcd[ch].csr.start = 1;
-	if (mux->trig)
+	if (trig)
 		mux->trig = 1;
 	mux->enbl = 1;
 }
@@ -128,16 +128,20 @@ dma_to_addr_adj(enum dma_channel ch, uint32_t off)
 	DMA.tcd[ch].dlastsga = off;
 }
 
-#define COMMON_HANDLER(ch)			\
-	uint8_t curr = DMA.tcd[ch].citer.elinkyes.elink ? DMA.tcd[ch].citer.elinkyes.citer : DMA.tcd[ch].citer.elinkno.citer;  \
-	ctx[ch].cb(ch, 0, curr);		\
-	/* BEGIN freescale 4588 workaround */	\
-	DMA.tcd[ch].csr.dreq = 0;		\
-	DMAMUX0[ch].enbl = 0;			\
-	DMAMUX0[ch].enbl = 1;			\
-	DMA.serq.serq = ch;			\
-	/* END freescale 4588 workaround */	\
-	DMA.cint.cint = ch;			\
+#define COMMON_HANDLER(ch)					\
+	uint8_t curr = DMA.tcd[ch].citer.elinkyes.elink ?	\
+		DMA.tcd[ch].citer.elinkyes.citer :		\
+		DMA.tcd[ch].citer.elinkno.citer;		\
+	ctx[ch].cb(ch, 0, curr);				\
+	/* BEGIN freescale 4588 workaround */			\
+	if (DMAMUX0[ch].trig) {					\
+		DMA.tcd[ch].csr.dreq = 0;			\
+		DMAMUX0[ch].enbl = 0;				\
+		DMAMUX0[ch].enbl = 1;				\
+		DMA.serq.serq = ch;				\
+	}							\
+	/* END freescale 4588 workaround */			\
+	DMA.cint.cint = ch;					\
 
 void
 DMA0_Handler(void)

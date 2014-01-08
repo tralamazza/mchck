@@ -28,7 +28,7 @@ void dma_set_arbitration(enum dma_arbitration_t arb);
 void dma_from(enum dma_channel ch, void* addr, size_t count, enum dma_transfer_size_t tsize, size_t off, uint8_t mod);
 void dma_to(enum dma_channel ch, void* addr, size_t count, enum dma_transfer_size_t tsize, size_t off, uint8_t mod);
 void dma_major_loop_count(enum dma_channel ch, uint16_t iter);
-void dma_start(enum dma_channel ch, enum dma_mux_source_t source, uint8_t tri, dma_cb* cb);
+void dma_start(enum dma_channel ch, enum dma_mux_source_t source, uint8_t trig, dma_cb* cb);
 void dma_cancel(enum dma_channel ch);
 void dma_set_priority(enum dma_channel ch, uint8_t prio);
 void dma_enable_channel_preemption(enum dma_channel ch, uint8_t on);
