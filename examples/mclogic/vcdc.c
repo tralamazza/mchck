@@ -72,7 +72,7 @@ new_data(uint8_t *data, size_t len)
 		fprintf(stderr, "sampling started\n");
 		buf_pos = 0;
 		while (buf_pos < BUFFER_SIZE) {
-			buffer[buf_pos++] = 0x55;
+			buffer[buf_pos++] = buf_pos << 1;
 		}
 		fprintf(stderr, "sampling finished\n");
 		buf_pos = cdc_write(buffer, BUFFER_SIZE, &cdc);
