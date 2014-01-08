@@ -1,6 +1,6 @@
 #McLogic
 
-A logic analyzer for the [mchck](https://mchck.org).
+A logic analyzer for the [mchck](https://mchck.org) compatible with the [SUMP](http://www.sump.org/projects/analyzer/protocol/) protocol.
 
 ##Features
 
