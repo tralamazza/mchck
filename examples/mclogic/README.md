@@ -32,6 +32,14 @@ sigrok-cli example:
 
     $> sigrok-cli --driver=ols:conn=/dev/ttyACM0 --config external_clock=0 --config rle=0 --config samplerate=1M --samples 1024
 
+Pulseview:
+
+- Select *File->Connect to Device...*
+- Select *Openbench Logic Sniffer (ols)*
+- Enter `/dev/ttyACM0` in the Serial Port
+- Click *Scan for Devices*, you should see *MCHCK FPGA version ...*
+- In the main window click on the tool icon and set the pattern generator mode to *internal*.
+
 ###VUSB (for local testing)
 You can build a simple host mode demo using McHCK's VUSB (which doesn't require a mchck device):
 
@@ -44,7 +52,7 @@ NOTE: You might need to *modprobe* a linux usb module.
 ##Settings
 Make sure your UI is set to use:
 
-- "internal" clock
+- "internal" clock mode
 - no RLE
 - serial trigger
 - no filter
