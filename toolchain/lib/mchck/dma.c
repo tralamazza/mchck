@@ -13,15 +13,15 @@ dma_init(void)
 	int i;
 	for (i = 0; i < 4; i++) {
 		volatile struct DMA_TCD_t* tcd = &DMA.tcd[i];
-		tcd->soff = 0;
+		tcd->soff = 0; /* no source offset */
 		tcd->attr.raw = 0;
-		tcd->slast = 0;
-		tcd->doff = 0; /* no dst offset */
+		tcd->slast = 0; /* no source address adjustment */
+		tcd->doff = 0; /* no dest offset */
 		tcd->citer.elinkno.elink = 0; /* no minor loop linking */
 		tcd->citer.elinkno.citer = 1; /* 1 major loop iteration */
-		tcd->dlastsga = 0;
-		tcd->csr.intmajor = 1; /* enable interrupt after biter finishes */
-		tcd->csr.majorlinkch = 0; /* don't chain (link) after biter */
+		tcd->dlastsga = 0; /* no dest address adjustment */
+		tcd->csr.intmajor = 1; /* enable interrupt after major loop finishes */
+		tcd->csr.majorlinkch = 0; /* don't chain (link) after major loop */
 		tcd->csr.bwc = 0; /* no dma stalls */
 		tcd->biter.elinkno.elink = 0; /* no minor loop linking */
 		tcd->biter.elinkno.biter = 1; /* 1 major loop iteration */
@@ -128,16 +128,16 @@ dma_to_addr_adj(enum dma_channel ch, uint32_t off)
 	DMA.tcd[ch].dlastsga = off;
 }
 
-#define COMMON_HANDLER(ch)		      \
+#define COMMON_HANDLER(ch)			\
 	uint8_t curr = DMA.tcd[ch].citer.elinkyes.elink ? DMA.tcd[ch].citer.elinkyes.citer : DMA.tcd[ch].citer.elinkno.citer;  \
-	ctx[ch].cb(ch, 0, curr);	      \
-	/* BEGIN freescale 4588 workaround */ \
-	DMA.tcd[ch].csr.dreq = 0;	      \
-	DMAMUX0[ch].enbl = 0;		      \
-	DMAMUX0[ch].enbl = 1;		      \
-	DMA.serq.serq = ch;		      \
-	/* END freescale 4588 workaround */   \
-	DMA.cint.cint = ch;		      \
+	ctx[ch].cb(ch, 0, curr);		\
+	/* BEGIN freescale 4588 workaround */	\
+	DMA.tcd[ch].csr.dreq = 0;		\
+	DMAMUX0[ch].enbl = 0;			\
+	DMAMUX0[ch].enbl = 1;			\
+	DMA.serq.serq = ch;			\
+	/* END freescale 4588 workaround */	\
+	DMA.cint.cint = ch;			\
 
 void
 DMA0_Handler(void)
