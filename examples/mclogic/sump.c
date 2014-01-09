@@ -149,11 +149,27 @@ start_sampling()
 	pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, NULL);
 	/* dma has to be set to a "always on" source because PIT gates it */
 	dma_start(DMA_CH_0, DMA_MUX_SRC_ALWAYS0, 1, dma_handler);
-#else
-	/* configure the timer according to our divider and clk */
-	pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, pit_handler_sample);
-#endif
 	onboard_led(ONBOARD_LED_ON);
+#else
+	onboard_led(ONBOARD_LED_ON);
+	if (ctx.divider < 20) { // some busy loop threshold
+		/* configure the timer according to our divider and clk. handler is not required. */
+		pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, NULL);
+		for (;;) {
+			buffer[buf_pos++] = (uint8_t)GPIOD.pdir;
+			if (buf_pos >= BUFFER_SIZE)
+				break;
+			while (PIT.timer[PIT_0].cval > 5) // 5 is a magical number
+				;
+		}
+		onboard_led(ONBOARD_LED_OFF);
+		pit_stop(PIT_0);
+		buf_pos = ctx.write(buffer, BUFFER_SIZE);
+	} else {
+		/* configure the timer according to our divider and clk */
+		pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, pit_handler_sample);
+	}
+#endif
 }
 
 /* handles triggering */
