@@ -170,8 +170,8 @@ start_sampling()
 			buffer[buf_pos++] = (uint8_t)GPIOD.pdir;
 			if (buf_pos >= BUFFER_SIZE)
 				break;
-			while (PIT.timer[PIT_0].cval > 5) // 5 is a magical number
-				;
+			while (PIT.timer[PIT_0].cval > PIT.timer[PIT_0].cval)
+				__asm__("nop");
 		}
 		onboard_led(ONBOARD_LED_OFF);
 		pit_stop(PIT_0);
@@ -210,7 +210,12 @@ sump_arm()
 				irqc = PCR_IRQC_DISABLED;
 			}
 			/* PIN_PTD0 + i = assumes port addr are contiguous */
-			pin_physport_from_pin(PIN_PTD0 + i)->pcr[pin_physpin_from_pin(PIN_PTD0 + i)].irqc = irqc;
+			volatile struct PORT_t *pin = pin_physport_from_pin(PIN_PTD0 + i);
+			pin->pcr[pin_physpin_from_pin(PIN_PTD0 + i)].irqc = irqc;
+/*			if (ctx.filter) {
+				pin->dfcr.cs = PORT_CS_LPO; // 1KHz clk source
+				pin->dfwr.filt = 2; // cycles
+			}*/
 		}
 		int_enable(IRQ_PORTD);
 	} else {
