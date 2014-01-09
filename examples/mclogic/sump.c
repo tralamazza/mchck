@@ -163,7 +163,7 @@ start_sampling()
 	onboard_led(ONBOARD_LED_ON);
 #else
 	onboard_led(ONBOARD_LED_ON);
-	if ((ctx.divider * CLK_SCALING) < 10000) { // some busy loop threshold
+	if ((ctx.divider * CLK_SCALING) < BUSYLOOP_THRESHOLD) {
 		/* configure the timer according to our divider and clk. handler is not required. */
 		pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, NULL);
 		for (;;) {
