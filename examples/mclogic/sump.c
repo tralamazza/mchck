@@ -21,7 +21,7 @@ enum sump_cmd_t {
 };
 
 #define NUM_PROBES 8
-#define CLK_SCALING 50
+#define CLK_SCALING 48
 #define BUFFER_SIZE 4*1024
 
 static uint8_t buffer[BUFFER_SIZE];
@@ -126,7 +126,7 @@ dma_handler(uint8_t ch, uint32_t err, uint8_t major)
 static void
 pit_handler_sample(enum pit_id id)
 {
-	buffer[buf_pos++] = GPIOD.pdir;
+	buffer[buf_pos++] = (uint8_t)GPIOD.pdir;
 	if (buf_pos >= BUFFER_SIZE) {
 		onboard_led(ONBOARD_LED_OFF);
 		pit_stop(PIT_0);
