@@ -1,9 +1,5 @@
 PROG=	mclogic
 
-ifdef SIGROK
-CFLAGS+=	-DMCLOGIC_SIGROK
-endif
-
 ifdef DMA
 CFLAGS+=	-DMCLOGIC_DMA
 endif

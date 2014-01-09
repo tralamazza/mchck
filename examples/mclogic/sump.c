@@ -20,9 +20,20 @@ enum sump_cmd_t {
 	SUMP_CMD_SET_FLAGS =            0x82
 };
 
+/* entire PORTD */
 #define NUM_PROBES 8
-#define CLK_SCALING 48
+
+/* sysclock/CLK_SCALING = mclogic max samplerate */
+#define CLK_SCALING 24
+
+/* TODO read it from the mcu */
+#define SYSCLK_SCALING 48
+
+/* data */
 #define BUFFER_SIZE 4*1024
+
+/* below this level (10KHz) sample via PIT interrupt */
+#define BUSYLOOP_THRESHOLD 10000
 
 static uint8_t buffer[BUFFER_SIZE];
 
@@ -33,9 +44,9 @@ static const uint8_t PROTOCOL_VERSION[4] = { '1', 'A', 'L', 'S' };
 static const uint8_t METADATA[] = {
 	0x01, 'M', 'C', 'H', 'C', 'K', 0x00, // device name
 	0x02, '0', '.', '1', 0x00, // firmware version
-	// 0x20, 0x00, 0x00, 0x00, 0x08, // 8 probes (long)
 	0x21, 0x00, 0x00, 0x10, 0x00, // 4096 bytes of memory (BUFFER_SIZE)
-	0x23, 0x00, 0x0f, 0x42, 0x40, // max sample rate (1MHz)
+	// 0x23, 0x00, 0x0f, 0x42, 0x40, // max sample rate (1MHz)
+	0x23, 0x00, 0x1e, 0x84, 0x80, // max sample rate (2MHz)
 	0x40, 0x08, // 8 probes (short)
 	0x41, 0x02, // protocol 2
 	0x00
@@ -103,7 +114,7 @@ sump_reset()
 	ctx.delay_count = 0;
 	ctx.reset_count = 0;
 	buf_pos = 0;
-	pit_stop(PIT_0); /* if anything is running, kill it */
+	pit_stop(PIT_0); /* kill the timer */
 	onboard_led(ONBOARD_LED_OFF);
 }
 
@@ -152,7 +163,7 @@ start_sampling()
 	onboard_led(ONBOARD_LED_ON);
 #else
 	onboard_led(ONBOARD_LED_ON);
-	if (ctx.divider < 20) { // some busy loop threshold
+	if ((ctx.divider * CLK_SCALING) < 10000) { // some busy loop threshold
 		/* configure the timer according to our divider and clk. handler is not required. */
 		pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, NULL);
 		for (;;) {
@@ -234,9 +245,7 @@ sump_init(sump_writer *w)
 void
 sump_data_sent(size_t value)
 {
-	if (buf_pos == 0)
-		return;
-	if ((value == CDC_TX_SIZE) && (buf_pos < BUFFER_SIZE)) {
+	if ((buf_pos != 0) && (buf_pos < BUFFER_SIZE)) {
 		buf_pos += ctx.write(buffer + buf_pos, BUFFER_SIZE);
 	}
 }
@@ -279,9 +288,7 @@ sump_process(uint8_t* data, size_t len)
 		break;
 	case SUMP_CMD_SET_DIVIDER:
 		ctx.divider = ((struct divider_t*)data)->value;
-#ifdef MCLOGIC_SIGROK
-		ctx.divider = (ctx.divider + 1) / 100;
-#endif
+		ctx.divider = (ctx.divider + 1) / (100 / (SYSCLK_SCALING / CLK_SCALING)); // 100MHz = default OLS clk mult.
 		if (!ctx.divider)
 			ctx.divider = 1;
 		break;
