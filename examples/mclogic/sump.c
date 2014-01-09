@@ -266,6 +266,8 @@ sump_process(uint8_t* data, size_t len)
 #ifdef MCLOGIC_SIGROK
 		ctx.divider = (ctx.divider + 1) / 100;
 #endif
+		if (!ctx.divider)
+			ctx.divider = 1;
 		break;
 	case SUMP_CMD_SET_READ_DELAY_COUNT:
 		ctx.read_count = ((*(uint16_t*)data) + 1) * 4; // read first 2 bytes
