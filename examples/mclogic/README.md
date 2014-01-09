@@ -15,7 +15,7 @@ A logic analyzer for the [mchck](https://mchck.org) compatible with the [SUMP](h
 There are 3 basic ways of building McLogic.
 
 ###Standard
-This should work with OLS (**untested**).
+This should work with [OLS](http://www.lxtreme.nl/ols/) (**untested**).
 
     $> make flash
 
