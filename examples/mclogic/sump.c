@@ -24,7 +24,7 @@ enum sump_cmd_t {
 #define NUM_PROBES 8
 
 /* sysclock/CLK_SCALING = mclogic max samplerate */
-#define CLK_SCALING 24
+#define CLK_SCALING 12
 
 /* TODO read it from the mcu */
 #define SYSCLK_SCALING 48
@@ -45,7 +45,8 @@ static const uint8_t METADATA[] = {
 	0x01, 'M', 'C', 'H', 'C', 'K', 0x00, // device name
 	0x02, '0', '.', '1', 0x00, // firmware version
 	0x21, 0x00, 0x00, 0x10, 0x00, // 4096 bytes of memory (BUFFER_SIZE)
-	0x23, 0x00, 0x1e, 0x84, 0x80, // max sample rate (2MHz)
+	//0x23, 0x00, 0x1e, 0x84, 0x80, // max sample rate (2MHz)
+	0x23, 0x00, 0x3d, 0x09, 0x00, // max sample rate (4MHz)
 	0x40, 0x08, // 8 probes (short)
 	0x41, 0x02, // protocol 2
 	0x00
@@ -308,7 +309,7 @@ sump_process(uint8_t* data, size_t len)
 		break;
 	case SUMP_CMD_SET_DIVIDER:
 		ctx.divider = ((struct divider_t*)data)->value;
-		ctx.divider = (ctx.divider + 1) / (100 / (SYSCLK_SCALING / CLK_SCALING)); // 100MHz = default OLS clk mult.
+		ctx.divider = (ctx.divider + 1) / ((SYSCLK_SCALING * 100) / CLK_SCALING); // 100MHz = default OLS clk mult.
 		if (!ctx.divider)
 			ctx.divider = 1;
 		break;
