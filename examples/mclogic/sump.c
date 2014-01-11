@@ -94,8 +94,8 @@ struct sump_context {
 	.trigger = 0,
 	.trigger_mask = 0,
 	.divider = 1, /* run at full speed by default */
-	.read_count = 0,
-	.delay_count = 0,
+	.read_count = BUFFER_SIZE,
+	.delay_count = BUFFER_SIZE,
 	.reset_count = 0
 };
 
@@ -110,8 +110,8 @@ sump_reset()
 	ctx.trigger = 0;
 	ctx.trigger_mask = 0;
 	ctx.divider = 1; /* run at full speed by default */
-	ctx.read_count = 0;
-	ctx.delay_count = 0;
+	ctx.read_count = BUFFER_SIZE;
+	ctx.delay_count = BUFFER_SIZE;
 	ctx.reset_count = 0;
 	buf_pos = 0;
 	pit_stop(PIT_0); /* kill the timer */
