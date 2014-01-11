@@ -20,7 +20,7 @@ Make sure the client respects the following settings:
 - no filter
 - no demux
 - 8 probes
-- 1024 samples max
+- 4096 samples max
 
 McLogic is known to work with the following clients:
 
