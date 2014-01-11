@@ -150,7 +150,7 @@ static void
 start_sampling()
 {
 	buf_pos = 0;
-	/* setup timer, cycles = clock rate divider * (sysclock / max sample rate) - 1 */
+	onboard_led(ONBOARD_LED_ON);
 #ifdef MCLOGIC_DMA
 	/* set the dma to write to our buffer, 1 byte at a time.
 	   we let the pointer move forward by 1 byte (no address adjustment). */
@@ -160,14 +160,12 @@ start_sampling()
 	pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, NULL);
 	/* dma has to be set to a "always on" source because PIT gates it */
 	dma_start(DMA_CH_0, DMA_MUX_SRC_ALWAYS0, 1, dma_handler);
-	onboard_led(ONBOARD_LED_ON);
 #else
-	onboard_led(ONBOARD_LED_ON);
 	if ((ctx.divider * CLK_SCALING) < BUSYLOOP_THRESHOLD) {
 		/* configure the timer according to our divider and clk. handler is not required. */
 		pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, NULL);
-		while (buf_pos++ < ctx.read_count) {
-			buffer[buf_pos] = (uint8_t)GPIOD.pdir;
+		while (buf_pos < ctx.read_count) {
+			buffer[buf_pos++] = (uint8_t)GPIOD.pdir;
 			volatile uint32_t v;
 			for (;;) {
 				v = PIT.timer[PIT_0].cval;
