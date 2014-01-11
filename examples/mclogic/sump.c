@@ -45,7 +45,6 @@ static const uint8_t METADATA[] = {
 	0x01, 'M', 'C', 'H', 'C', 'K', 0x00, // device name
 	0x02, '0', '.', '1', 0x00, // firmware version
 	0x21, 0x00, 0x00, 0x10, 0x00, // 4096 bytes of memory (BUFFER_SIZE)
-	// 0x23, 0x00, 0x0f, 0x42, 0x40, // max sample rate (1MHz)
 	0x23, 0x00, 0x1e, 0x84, 0x80, // max sample rate (2MHz)
 	0x40, 0x08, // 8 probes (short)
 	0x41, 0x02, // protocol 2
@@ -124,11 +123,11 @@ sump_reset()
 static void
 dma_handler(uint8_t ch, uint32_t err, uint8_t major)
 {
-	if ((++buf_pos >= BUFFER_SIZE) || err) {
+	if ((++buf_pos >= ctx.read_count) || err) {
 		onboard_led(ONBOARD_LED_OFF);
 		dma_cancel(DMA_CH_0);
 		pit_stop(PIT_0);
-		buf_pos = ctx.write(buffer, BUFFER_SIZE);
+		buf_pos = ctx.write(buffer, ctx.read_count);
 	}
 }
 #else
@@ -138,10 +137,10 @@ static void
 pit_handler_sample(enum pit_id id)
 {
 	buffer[buf_pos++] = (uint8_t)GPIOD.pdir;
-	if (buf_pos >= BUFFER_SIZE) {
+	if (buf_pos >= ctx.read_count) {
 		onboard_led(ONBOARD_LED_OFF);
 		pit_stop(PIT_0);
-		buf_pos = ctx.write(buffer, BUFFER_SIZE);
+		buf_pos = ctx.write(buffer, ctx.read_count);
 	}
 }
 #endif
@@ -166,16 +165,18 @@ start_sampling()
 	if ((ctx.divider * CLK_SCALING) < BUSYLOOP_THRESHOLD) {
 		/* configure the timer according to our divider and clk. handler is not required. */
 		pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, NULL);
-		for (;;) {
-			buffer[buf_pos++] = (uint8_t)GPIOD.pdir;
-			if (buf_pos >= BUFFER_SIZE)
-				break;
-			while (PIT.timer[PIT_0].cval > PIT.timer[PIT_0].cval)
-				__asm__("nop");
+		while (buf_pos++ < ctx.read_count) {
+			buffer[buf_pos] = (uint8_t)GPIOD.pdir;
+			volatile uint32_t v;
+			for (;;) {
+				v = PIT.timer[PIT_0].cval;
+				if (v < PIT.timer[PIT_0].cval)
+					break;
+			}
 		}
 		onboard_led(ONBOARD_LED_OFF);
 		pit_stop(PIT_0);
-		buf_pos = ctx.write(buffer, BUFFER_SIZE);
+		buf_pos = ctx.write(buffer, ctx.read_count);
 	} else {
 		/* configure the timer according to our divider and clk */
 		pit_start(PIT_0, (ctx.divider * CLK_SCALING) - 1, pit_handler_sample);
@@ -243,21 +244,28 @@ sump_init(sump_writer *w)
 	dma_init();
 	/* set the dma to read the GPIOD 1x 8bits (byte) and
 	   move back 1 byte after reading (-1 address adjustment) */
-	dma_from(DMA_CH_0, (void*)0x400ff0C0, 1, DMA_TRANSFER_SIZE_8_BIT, 0, 0);
+	dma_from(DMA_CH_0, (void*)GPIOD, 1, DMA_TRANSFER_SIZE_8_BIT, 0, 0);
 #endif
 }
 
 void
 sump_data_sent(size_t value)
 {
-	if ((buf_pos != 0) && (buf_pos < BUFFER_SIZE)) {
-		buf_pos += ctx.write(buffer + buf_pos, BUFFER_SIZE);
+	if ((buf_pos != 0) && (buf_pos < ctx.read_count)) {
+		buf_pos += ctx.write(buffer + buf_pos, ctx.read_count);
 	}
 }
+
+//static uint8_t proto[40];
+//static uint8_t psize = 0;
 
 void
 sump_process(uint8_t* data, size_t len)
 {
+/*	int i;
+	for (i = 0; i < len && psize < 40; i++)
+		proto[psize++] = data[i];*/
+
 	if (data[0] == SUMP_CMD_RESET) {
 		if (++ctx.reset_count == 5) {
 			return sump_reset(); // only after 5 consecutive reset cmds
@@ -266,7 +274,14 @@ sump_process(uint8_t* data, size_t len)
 		ctx.reset_count = 0;
 	}
 
+/*	if ((len != 1 && len != 5)) {
+		onboard_led(ONBOARD_LED_ON);
+	}*/
+
 	switch(*data++) { // read and skip 1st byte
+/*	case 'a':
+		ctx.write(proto, 40);
+		break;*/
 	case SUMP_CMD_ARM:
 		sump_arm();
 		break;
@@ -299,8 +314,12 @@ sump_process(uint8_t* data, size_t len)
 		break;
 	case SUMP_CMD_SET_READ_DELAY_COUNT:
 		ctx.read_count = ((*(uint16_t*)data) + 1) * 4; // read first 2 bytes
+		if (ctx.read_count > BUFFER_SIZE)
+			ctx.read_count = BUFFER_SIZE;
 		data += 2;
 		ctx.delay_count = ((*(uint16_t*)data) + 1) * 4; // read next 2 bytes
+		if (ctx.delay_count > BUFFER_SIZE)
+			ctx.delay_count = BUFFER_SIZE;
 		break;
 	case SUMP_CMD_SET_FLAGS:
 		ctx.flags.raw = data[0];
