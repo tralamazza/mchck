@@ -297,10 +297,10 @@ void
 nrf_init(void)
 {
 	nrf_ctx.state = 0;
-	nrf_ctx.channel = 2;
-	nrf_ctx.data_rate = NRF_DATA_RATE_2MBPS;
+	nrf_ctx.channel = 42;
+	nrf_ctx.data_rate = NRF_DATA_RATE_1MBPS;
 	nrf_ctx.power = NRF_TX_POWER_0DBM;
-	nrf_ctx.crc_len = NRF_CRC_ENC_1_BYTE;
+	nrf_ctx.crc_len = NRF_CRC_ENC_2_BYTES;
 	nrf_ctx.ard = 0;
 	nrf_ctx.arc = 3;
 	nrf_ctx.power_save = 0;
