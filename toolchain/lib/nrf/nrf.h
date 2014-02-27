@@ -38,7 +38,7 @@ void nrf_set_channel(uint8_t ch);
 
 /*
  * Set both output power and data rate.
- * Note: Setting data rate to 250kbps will automatically set auto retransmission delay to 500us.
+ * Note: Setting data rate to 250kbps will automatically set auto retransmission delay to at least 500us.
  */
 void nrf_set_power_datarate(enum nrf_tx_output_power_t power, enum nrf_data_rate_t data_rate);
 
