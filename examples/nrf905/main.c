@@ -43,7 +43,7 @@ nrf905_app_state_handler(void *data)
 	}
 }
 
-void
+static void
 cdc_data_sent(size_t len)
 {
 	nrf905_receive(&ctx, payload, payload_len, nrf905_recv_done);
