@@ -8,11 +8,11 @@
 struct nrf905_rf_config_register {
 	// byte 0 and 1
 	uint16_t CH_NO		: 9;
-	enum {
+	enum nrf905_hfreq_pll_t {
 		HFREQ_PLL_433MHZ	= 0x0,
 		HFREQ_PLL_868_915MHZ	= 0x1
 	} HFREQ_PLL		: 1;
-	enum {
+	enum nrf905_pa_pwr_t {
 		PA_PWR_N10DBM	= 0x0,
 		PA_PWR_N2DBM	= 0x1,
 		PA_PWR_6DBM	= 0x2,
@@ -78,7 +78,7 @@ struct nrf905_ctx_t {
 		struct spi_ctx_bare spi_ctx;
 		struct sg tx_sg[2];
 		struct sg rx_sg[2];
-		uint8_t cmd[4];
+		uint8_t cmd[2];
 		uint8_t cmd_len;
 		uint8_t tx_len;
 		void *tx_data;
@@ -146,5 +146,15 @@ void nrf905_receive(struct nrf905_ctx_t *ctx, void *data, uint8_t len, nrf905_da
 
 /* reset the IC and load defaults */
 void nrf905_reset(struct nrf905_ctx_t *ctx, spi_cb *cb, void *data);
+
+/* frequency = (422.4 + (CH_NO / 10)) * (1 + HFREQ_PLL)MHz */
+void nrf905_set_channel_config(struct nrf905_ctx_t *ctx, uint8_t ch_no,
+	enum nrf905_hfreq_pll_t hfreq_pll, enum nrf905_pa_pwr_t pa_pwr, spi_cb *cb);
+
+/* WARNING writes the entire config */
+void nrf905_save_config(struct nrf905_ctx_t *ctx, spi_cb *cb);
+
+/* WARNING reads the entire config */
+void nrf905_load_config(struct nrf905_ctx_t *ctx, spi_cb *cb);
 
 #endif

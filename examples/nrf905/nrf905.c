@@ -11,6 +11,8 @@ enum NRF905_CMD {
 	CHANNEL_CONFIG	= 0x8000 // 1000 pphc cccc cccc
 };
 
+#define CHANNEL_CONFIG_MASK 0x8f
+
 enum {
 	NRF905_SPI_CS = SPI_PCS2
 };
@@ -27,7 +29,7 @@ nrf905_send_command(struct nrf905_ctx_t *ctx, spi_cb *cb, void *data)
 	spi_queue_xfer_sg(&ctx->trans.spi_ctx, NRF905_SPI_CS, tx, rx, cb, data);
 }
 
-void
+static void
 nrf905_read_config(struct nrf905_ctx_t *ctx, uint8_t offset, spi_cb *cb, void *data)
 {
 	ctx->trans.cmd[0] = R_CONFIG | offset;
@@ -130,7 +132,7 @@ nrf905_data_ready_interrupt(void *cbdata)
 void
 nrf905_set_rx_addr(struct nrf905_ctx_t *ctx, uint8_t *addr, uint8_t len, spi_cb *cb)
 {
-	for (int i = 0; i < len; i++) {
+	for (int i = 0; i < len && i < 4; i++) {
 		ctx->config.RX_ADDRESS[i] = addr[i];
 	}
 	nrf905_write_config(ctx, 5, cb, NULL);
@@ -173,4 +175,33 @@ nrf905_receive(struct nrf905_ctx_t *ctx, void *data, uint8_t len, nrf905_data_ca
 	ctx->state = NRF905_RX_START;
 	gpio_write(NRF905_TRX_CE, 1);
 	gpio_write(NRF905_TX_EN, 0);
+}
+
+void
+nrf905_set_channel(struct nrf905_ctx_t *ctx, uint8_t ch_no, enum nrf905_hfreq_pll_t hfreq_pll,
+	enum nrf905_pa_pwr_t pa_pwr, spi_cb *cb)
+{
+	ctx->config.CH_NO = ch_no;
+	ctx->config.HFREQ_PLL = hfreq_pll;
+	ctx->config.PA_PWR = pa_pwr;
+	memcpy(ctx->trans.cmd, &ctx->config, 2);
+	ctx->trans.cmd[1] &= CHANNEL_CONFIG_MASK;
+	ctx->trans.cmd_len = 2;
+	ctx->trans.tx_data = NULL;
+	ctx->trans.tx_len = 0;
+	ctx->trans.rx_data = NULL;
+	ctx->trans.rx_len = 0;
+	nrf905_send_command(ctx, cb, NULL);
+}
+
+void
+nrf905_save_config(struct nrf905_ctx_t *ctx, spi_cb *cb)
+{
+	nrf905_write_config(ctx, 0, cb, NULL);
+}
+
+void
+nrf905_load_config(struct nrf905_ctx_t *ctx, spi_cb *cb)
+{
+	nrf905_read_config(ctx, 0, cb, NULL);
 }
