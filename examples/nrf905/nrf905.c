@@ -65,26 +65,22 @@ nrf905_handle_state(struct nrf905_ctx_t *ctx)
 		ctx->state = NRF905_TX_DONE;
 		break;
 	case NRF905_TX_DONE:
-		if (ctx->status.DR) {
-			gpio_write(NRF905_TRX_CE, 0);
-			ctx->state = NRF905_IDLE;
-			if (ctx->cb) {
-				ctx->cb(ctx->cb_data, ctx->cb_data_len);
-			}
+		gpio_write(NRF905_TRX_CE, 0);
+		ctx->state = NRF905_IDLE;
+		if (ctx->cb) {
+			ctx->cb(ctx->cb_data, ctx->cb_data_len);
 		}
 		break;
 	case NRF905_RX_START:
-		if (ctx->status.DR) {
-			gpio_write(NRF905_TRX_CE, 1);
-			ctx->trans.cmd[0] = R_RX_PAYLOAD;
-			ctx->trans.cmd_len = 1;
-			ctx->trans.tx_data = NULL;
-			ctx->trans.tx_len = 0;
-			ctx->trans.rx_data = ctx->cb_data;
-			ctx->trans.rx_len = ctx->cb_data_len;
-			ctx->state = NRF905_RX_DONE;
-			nrf905_send_command(ctx, NULL, NULL);
-		}
+		gpio_write(NRF905_TRX_CE, 1);
+		ctx->trans.cmd[0] = R_RX_PAYLOAD;
+		ctx->trans.cmd_len = 1;
+		ctx->trans.tx_data = NULL;
+		ctx->trans.tx_len = 0;
+		ctx->trans.rx_data = ctx->cb_data;
+		ctx->trans.rx_len = ctx->cb_data_len;
+		ctx->state = NRF905_RX_DONE;
+		nrf905_send_command(ctx, NULL, NULL);
 		break;
 	case NRF905_RX_DONE:
 		ctx->state = NRF905_IDLE;
@@ -127,6 +123,7 @@ void
 nrf905_data_ready_interrupt(void *cbdata)
 {
 	struct nrf905_ctx_t *ctx = cbdata;
+	// XXX we might need a NOP here, maybe a write config reg to address 10 will work
 	nrf905_handle_state(ctx);
 }
 
