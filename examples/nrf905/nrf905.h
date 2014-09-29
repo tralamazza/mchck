@@ -92,9 +92,11 @@ struct nrf905_ctx_t {
 	struct nrf905_rf_config_register config;
 	enum {
 		NRF905_IDLE,
-		NRF905_TX_START,
+		NRF905_TX_LEN,
+		NRF905_TX_PAYLOAD,
 		NRF905_TX_DONE,
-		NRF905_RX_START,
+		NRF905_RX_LEN,
+		NRF905_RX_PAYLOAD,
 		NRF905_RX_DONE
 	} state;
 };
