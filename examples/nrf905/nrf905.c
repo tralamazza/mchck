@@ -11,11 +11,12 @@ enum NRF905_CMD {
 	CHANNEL_CONFIG	= 0x8000 // 1000 pphc cccc cccc
 };
 
-#define CHANNEL_CONFIG_MASK 0x8f
-
 enum {
 	NRF905_SPI_CS = SPI_PCS2
 };
+
+#define CHANNEL_CONFIG_MASK 0x8f
+#define CONFIG_REG_SIZE 10
 
 static void
 nrf905_send_command(struct nrf905_ctx_t *ctx, spi_cb *cb, void *data)
@@ -38,7 +39,7 @@ nrf905_read_config(struct nrf905_ctx_t *ctx, uint8_t offset, spi_cb *cb, void *d
 	ctx->trans.tx_len = 0;
 	ctx->trans.rx_data = &ctx->config;
 	ctx->trans.rx_data += offset;
-	ctx->trans.rx_len = 10 - offset; // TODO check this
+	ctx->trans.rx_len = CONFIG_REG_SIZE - offset; // TODO check this
 	nrf905_send_command(ctx, cb, data);
 }
 
@@ -49,7 +50,7 @@ nrf905_write_config(struct nrf905_ctx_t *ctx, uint8_t offset, spi_cb *cb, void *
 	ctx->trans.cmd_len = 1;
 	ctx->trans.tx_data = &ctx->config;
 	ctx->trans.tx_data += offset;
-	ctx->trans.tx_len = 10 - offset; // TODO check this
+	ctx->trans.tx_len = CONFIG_REG_SIZE - offset; // TODO check this
 	ctx->trans.rx_data = NULL;
 	ctx->trans.rx_len = 0;
 	nrf905_send_command(ctx, cb, data);
