@@ -18,7 +18,7 @@ static enum {
 } app_state = APP_STATE_INIT;
 
 static void
-nrf905_send_done(void *data, uint8_t len)
+nrf905_recv_done(void *data, uint8_t len)
 {
 	onboard_led(ONBOARD_LED_TOGGLE);
 	cdc_write(data, len, &cdc);
@@ -38,7 +38,7 @@ nrf905_app_state_handler(void *data)
 		app_state = APP_STATE_DONE;
 		nrf905_set_tx_addr(&ctx, target_addr, ADDR_LEN, nrf905_app_state_handler);
 	case APP_STATE_DONE:
-		nrf905_receive(&ctx, payload, payload_len, nrf905_send_done);
+		nrf905_receive(&ctx, payload, payload_len, nrf905_recv_done);
 		break;
 	}
 }
@@ -46,7 +46,7 @@ nrf905_app_state_handler(void *data)
 void
 cdc_data_sent(size_t len)
 {
-	nrf905_receive(&ctx, payload, payload_len, nrf905_send_done);
+	nrf905_receive(&ctx, payload, payload_len, nrf905_recv_done);
 }
 
 void
