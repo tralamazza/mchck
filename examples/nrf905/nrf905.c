@@ -114,6 +114,7 @@ void
 nrf905_reset(struct nrf905_ctx_t *ctx, spi_cb *cb, void *data)
 {	
 	gpio_write(NRF905_PWR_UP, 0);
+	ctx->state = NRF905_IDLE;
 
 	ctx->config.CH_NO = 108; // default
 	ctx->config.HFREQ_PLL = HFREQ_PLL_433MHZ; // default
@@ -215,4 +216,18 @@ void
 nrf905_load_config(struct nrf905_ctx_t *ctx, spi_cb *cb)
 {
 	nrf905_read_config(ctx, 0, cb, NULL);
+}
+
+void
+nrf905_init(struct nrf905_ctx_t *ctx, spi_cb *cb)
+{
+	pin_mode(NRF905_CSN, PIN_MODE_MUX_ALT2);
+	pin_mode(NRF905_SCK, PIN_MODE_MUX_ALT2);
+	pin_mode(NRF905_MOSI, PIN_MODE_MUX_ALT2);
+	pin_mode(NRF905_MISO, PIN_MODE_MUX_ALT2);
+	gpio_dir(NRF905_DR, GPIO_INPUT);
+	gpio_dir(NRF905_TX_EN, GPIO_OUTPUT);
+	gpio_dir(NRF905_TRX_CE, GPIO_OUTPUT);
+	gpio_dir(NRF905_PWR_UP, GPIO_OUTPUT);
+	nrf905_reset(ctx, cb, NULL);
 }

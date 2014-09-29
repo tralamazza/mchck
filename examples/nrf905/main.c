@@ -57,11 +57,13 @@ init_vcdc(int enable)
 	}
 }
 
-NRF905_INIT_DECL(&ctx);
+NRF905_INT_DECL(&ctx);
 
 int
 main(void)
 {
+	spi_init();
+	pin_change_init();
 	usb_init(&cdc_device);
 	nrf905_init(&ctx, nrf905_app_state_handler);
 	sys_yield_for_frogs();

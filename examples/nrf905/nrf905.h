@@ -114,24 +114,12 @@ enum {
 
 void nrf905_data_ready_interrupt(void *cbdata);
 
-/* initialization macro, implements "nrf905_init" */
-#define NRF905_INIT_DECL(_ctx) \
+/* setup nrf905 DR interrupt */
+#define NRF905_INT_DECL(_ctx)	\
 	PIN_DEFINE_CALLBACK(NRF905_DR, PIN_CHANGE_FALLING, nrf905_data_ready_interrupt, _ctx);	\
-	void nrf905_init(struct nrf905_ctx_t *ctx, spi_cb *cb) {				\
-		spi_init();									\
-		pin_mode(NRF905_CSN, PIN_MODE_MUX_ALT2);					\
-		pin_mode(NRF905_SCK, PIN_MODE_MUX_ALT2);					\
-		pin_mode(NRF905_MOSI, PIN_MODE_MUX_ALT2);					\
-		pin_mode(NRF905_MISO, PIN_MODE_MUX_ALT2);					\
-		gpio_dir(NRF905_DR, GPIO_INPUT);						\
-		gpio_dir(NRF905_TX_EN, GPIO_OUTPUT);						\
-		gpio_dir(NRF905_TRX_CE, GPIO_OUTPUT);						\
-		gpio_dir(NRF905_PWR_UP, GPIO_OUTPUT);						\
-		pin_change_init();								\
-		nrf905_reset(ctx, cb, NULL);							\
-	}											\
 
-/* initialization, call it once */
+/* initialization, call it once
+   requires: spit_init() and pin_change_init() */
 void nrf905_init(struct nrf905_ctx_t *ctx, spi_cb *cb);
 
 /* set RX address (1 or 4 bytes long) */
