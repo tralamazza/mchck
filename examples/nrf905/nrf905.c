@@ -107,7 +107,7 @@ nrf905_reset(struct nrf905_ctx_t *ctx, spi_cb *cb, void *data)
 	ctx->config.AUTO_RETRAN = 0; // default
 	ctx->config.RX_AFW = RX_AFW_4BYTES; // default
 	ctx->config.TX_AFW = TX_AFW_4BYTES; // default
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 4; i++) {
 		ctx->config.RX_ADDRESS[i] = 0xe7; // default
 	}
 	ctx->config.UP_CLK_FREQ = UP_CLK_FREQ_500KHZ; // default
