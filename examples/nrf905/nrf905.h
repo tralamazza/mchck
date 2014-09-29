@@ -144,9 +144,6 @@ void nrf905_send(struct nrf905_ctx_t *ctx, void *data, uint8_t len, nrf905_data_
 /* receive "len" bytes of "data" */
 void nrf905_receive(struct nrf905_ctx_t *ctx, void *data, uint8_t len, nrf905_data_callback cb);
 
-/* part of the initialization, DO NOT call it directly */
-void nrf905_config(struct nrf905_ctx_t *ctx, spi_cb *cb);
-
 /* reset the IC and load defaults */
 void nrf905_reset(struct nrf905_ctx_t *ctx, spi_cb *cb, void *data);
 
