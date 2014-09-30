@@ -4,6 +4,11 @@
 #include <mchck.h>
 #include <sys/types.h>
 
+enum nrf905_addr_len_t {
+	ADDR_LEN_1BYTE	= 0x1,
+	ADDR_LEN_2BYTES	= 0x2,
+	ADDR_LEN_4BYTES	= 0x4
+}; 
 
 struct nrf905_rf_config_register {
 	// byte 0 and 1
@@ -22,15 +27,9 @@ struct nrf905_rf_config_register {
 	uint8_t AUTO_RETRAN	: 1;
 	uint8_t _pad1		: 2;
 	// byte 2
-	enum {
-		RX_AFW_1BYTE	= 0x1,
-		RX_AFW_4BYTES	= 0x4
-	} RX_AFW		: 3;
+	enum nrf905_addr_len_t RX_AFW	: 3;
 	uint8_t _pad2		: 1;
-	enum {
-		TX_AFW_1BYTE	= 0x1,
-		TX_AFW_4BYTES	= 0x4
-	} TX_AFW		: 3;
+	enum nrf905_addr_len_t TX_AFW	: 3;
 	uint8_t _pad3		: 1;
 	// byte 3
 	uint8_t RX_PW		: 6;
@@ -99,13 +98,14 @@ struct nrf905_ctx_t {
 		NRF905_RX_PAYLOAD,
 		NRF905_RX_DONE
 	} state;
+	struct timeout_ctx timer;
 };
 
 enum {
-	NRF905_TX_EN	= PIN_PTD0,
-	NRF905_PWR_UP	= PIN_PTD1,
-	NRF905_TRX_CE	= PIN_PTD2,
-	NRF905_DR	= PIN_PTD3,
+	NRF905_TX_EN	= PIN_PTB3,
+	NRF905_PWR_UP	= PIN_PTB2,
+	NRF905_TRX_CE	= PIN_PTB1,
+	NRF905_DR	= PIN_PTB0,
 	NRF905_CSN	= PIN_PTC2,
 	NRF905_SCK	= PIN_PTC5,
 	NRF905_MOSI	= PIN_PTC6,
@@ -116,10 +116,10 @@ void nrf905_data_ready_interrupt(void *cbdata);
 
 /* setup nrf905 DR interrupt */
 #define NRF905_INT_DECL(_ctx)	\
-	PIN_DEFINE_CALLBACK(NRF905_DR, PIN_CHANGE_FALLING, nrf905_data_ready_interrupt, _ctx);	\
+	PIN_DEFINE_CALLBACK(NRF905_DR, PIN_CHANGE_RISING, nrf905_data_ready_interrupt, _ctx);	\
 
 /* initialization, call it once
-   requires: spit_init() and pin_change_init() */
+   requires: timeout_init(), spit_init() and pin_change_init() */
 void nrf905_init(struct nrf905_ctx_t *ctx, spi_cb *cb);
 
 /* set RX address (1 or 4 bytes long) */

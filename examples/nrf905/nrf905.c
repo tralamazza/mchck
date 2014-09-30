@@ -76,7 +76,6 @@ nrf905_handle_state(void *data)
 	case NRF905_TX_PAYLOAD:
 		ctx->state = NRF905_TX_DONE;
 		gpio_write(NRF905_TRX_CE, 1);
-		gpio_write(NRF905_TX_EN, 1);
 		break;
 	case NRF905_TX_DONE:
 		ctx->state = NRF905_IDLE;
@@ -112,17 +111,19 @@ nrf905_handle_state(void *data)
 
 void
 nrf905_reset(struct nrf905_ctx_t *ctx, spi_cb *cb, void *data)
-{	
-	gpio_write(NRF905_PWR_UP, 0);
+{
 	ctx->state = NRF905_IDLE;
+	gpio_write(NRF905_PWR_UP, 0);
 
 	ctx->config.CH_NO = 108; // default
 	ctx->config.HFREQ_PLL = HFREQ_PLL_433MHZ; // default
 	ctx->config.PA_PWR = PA_PWR_10DBM; // +10dBm
 	ctx->config.RX_RED_PWR = 0; // default
 	ctx->config.AUTO_RETRAN = 0; // default
-	ctx->config.RX_AFW = RX_AFW_4BYTES; // default
-	ctx->config.TX_AFW = TX_AFW_4BYTES; // default
+	ctx->config.RX_AFW = ADDR_LEN_4BYTES; // default
+	ctx->config.TX_AFW = ADDR_LEN_4BYTES; // default
+	ctx->config.RX_PW = 32; // default
+	ctx->config.TX_PW = 32; // default
 	for (int i = 0; i < 4; i++) {
 		ctx->config.RX_ADDRESS[i] = 0xe7; // default
 	}
@@ -132,18 +133,20 @@ nrf905_reset(struct nrf905_ctx_t *ctx, spi_cb *cb, void *data)
 	ctx->config.CRC_EN = 1; // default
 	ctx->config.CRC_MODE = CRC_MODE_16BITS; // default
 
-	nrf905_write_config(ctx, 0, cb, data);
+	nrf905_write_config(ctx, 0, NULL, NULL);
 
 	gpio_write(NRF905_TRX_CE, 0);
-	gpio_write(NRF905_TX_EN, 1);
+	gpio_write(NRF905_TX_EN, 0);
 	gpio_write(NRF905_PWR_UP, 1);
+	// PWR_DWN -> ST_BY mode (3ms)
+	timeout_add(&ctx->timer, 3, cb, data);
 }
 
 void
-nrf905_data_ready_interrupt(void *cbdata)
+nrf905_data_ready_interrupt(void *data)
 {
 	// XXX we might need a NOP here, maybe a write config reg to address 10 will work
-	nrf905_handle_state(cbdata);
+	nrf905_handle_state(data);
 }
 
 void
@@ -175,6 +178,7 @@ nrf905_send(struct nrf905_ctx_t *ctx, void *data, uint8_t len, nrf905_data_callb
 	ctx->cb_data_len = len;
 	ctx->config.TX_PW = len;
 	ctx->state = NRF905_TX_LEN;
+	gpio_write(NRF905_TX_EN, 1);
 	nrf905_write_config(ctx, 4, nrf905_handle_state, ctx);
 }
 
