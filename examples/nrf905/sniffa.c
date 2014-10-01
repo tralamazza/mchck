@@ -17,11 +17,9 @@ static const uint16_t MAX_CH_NO = (1 << 10) - 1;
 static void
 change_channel(void *data)
 {
-	// printf("r %d\r\n", ctx.config.CH_NO);
 	channel = channel % MAX_CH_NO;
 	channel++;
 	nrf905_set_channel_config(&ctx, channel, HFREQ_PLL_433MHZ, PA_PWR_10DBM, channel_changed);
-	// printf("w %d\r\n", channel);
 }
 
 static void
@@ -40,15 +38,9 @@ recv_done(void *data, uint8_t len)
 }
 
 static void
-load_config(void *data)
-{
-	nrf905_load_config(&ctx, change_channel);
-}
-
-static void
 channel_changed(void *data)
 {
-	timeout_add(&t, 50, load_config, NULL);
+	timeout_add(&t, 50, change_channel, NULL);
 	nrf905_receive(&ctx, payload, PAYLOAD_LEN, recv_done);
 }
 
