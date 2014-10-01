@@ -194,7 +194,7 @@ nrf905_receive(struct nrf905_ctx_t *ctx, void *data, uint8_t len, nrf905_data_ca
 }
 
 void
-nrf905_set_channel(struct nrf905_ctx_t *ctx, uint8_t ch_no, enum nrf905_hfreq_pll_t hfreq_pll,
+nrf905_set_channel_config(struct nrf905_ctx_t *ctx, uint8_t ch_no, enum nrf905_hfreq_pll_t hfreq_pll,
 	enum nrf905_pa_pwr_t pa_pwr, spi_cb *cb)
 {
 	ctx->config.CH_NO = ch_no;
