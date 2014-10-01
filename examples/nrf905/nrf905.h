@@ -10,7 +10,7 @@ enum nrf905_addr_len_t {
 	ADDR_LEN_4BYTES	= 0x4
 };
 
-struct nrf905_rf_config_register {
+struct nrf905_rf_config_register_t {
 	// byte 0 and 1
 	uint16_t CH_NO		: 9;
 	enum nrf905_hfreq_pll_t {
@@ -60,15 +60,15 @@ struct nrf905_rf_config_register {
 		CRC_MODE_16BITS	= 0x1
 	} CRC_MODE		: 1;
 };
-CTASSERT_SIZE_BYTE(struct nrf905_rf_config_register, 10);
+CTASSERT_SIZE_BYTE(struct nrf905_rf_config_register_t, 10);
 
-struct nrf905_status_register {
+struct nrf905_status_register_t {
 	uint8_t _pad1	: 5;
 	uint8_t DR	: 1;
 	uint8_t _pad2	: 1;
 	uint8_t AM	: 1;
 };
-CTASSERT_SIZE_BYTE(struct nrf905_status_register, 1);
+CTASSERT_SIZE_BYTE(struct nrf905_status_register_t, 1);
 
 typedef void (nrf905_data_callback)(void *, uint8_t);
 
@@ -87,8 +87,8 @@ struct nrf905_ctx_t {
 	nrf905_data_callback *cb;
 	void *cb_data;
 	uint8_t cb_data_len;
-	struct nrf905_status_register status;
-	struct nrf905_rf_config_register config;
+	struct nrf905_status_register_t status;
+	struct nrf905_rf_config_register_t config;
 	enum {
 		NRF905_IDLE,
 		NRF905_TX_LEN,
@@ -123,10 +123,10 @@ void nrf905_data_ready_interrupt(void *cbdata);
    requires: timeout_init(), spit_init() and pin_change_init() */
 void nrf905_init(struct nrf905_ctx_t *ctx, spi_cb *cb);
 
-/* set RX address (1 or 4 bytes long) */
+/* set RX address (1 to 4 bytes long) */
 void nrf905_set_rx_addr(struct nrf905_ctx_t *ctx, uint8_t *addr, uint8_t len, spi_cb *cb);
 
-/* set TX address (1 or 4 bytes long) */
+/* set TX address (1 to 4 bytes long) */
 void nrf905_set_tx_addr(struct nrf905_ctx_t *ctx, uint8_t *addr, uint8_t len, spi_cb *cb);
 
 /* send "len" bytes of "data" */
@@ -135,7 +135,7 @@ void nrf905_send(struct nrf905_ctx_t *ctx, void *data, uint8_t len, nrf905_data_
 /* receive "len" bytes of "data" */
 void nrf905_receive(struct nrf905_ctx_t *ctx, void *data, uint8_t len, nrf905_data_callback cb);
 
-/* reset the IC and load defaults */
+/* reset the IC and load the default config */
 void nrf905_reset(struct nrf905_ctx_t *ctx, spi_cb *cb, void *data);
 
 /* frequency = (422.4 + (CH_NO / 10)) * (1 + HFREQ_PLL)MHz */
