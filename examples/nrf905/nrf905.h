@@ -139,7 +139,7 @@ void nrf905_receive(struct nrf905_ctx_t *ctx, void *data, uint8_t len, nrf905_da
 void nrf905_reset(struct nrf905_ctx_t *ctx, spi_cb *cb, void *data);
 
 /* frequency = (422.4 + (CH_NO / 10)) * (1 + HFREQ_PLL)MHz */
-void nrf905_set_channel_config(struct nrf905_ctx_t *ctx, uint8_t ch_no,
+void nrf905_set_channel_config(struct nrf905_ctx_t *ctx, uint16_t ch_no,
 	enum nrf905_hfreq_pll_t hfreq_pll, enum nrf905_pa_pwr_t pa_pwr, spi_cb *cb);
 
 /* WARNING writes the entire config */
