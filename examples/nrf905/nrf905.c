@@ -98,7 +98,7 @@ nrf905_handle_state(void *data)
 		ctx->trans.rx_data = ctx->cb_data;
 		ctx->trans.rx_len = ctx->cb_data_len;
 		ctx->state = NRF905_RX_DONE;
-		nrf905_send_command(ctx, NULL, NULL);
+		nrf905_send_command(ctx, nrf905_handle_state, ctx);
 		break;
 	case NRF905_RX_DONE:
 		ctx->state = NRF905_IDLE;
