@@ -8,7 +8,7 @@ enum nrf905_addr_len_t {
 	ADDR_LEN_1BYTE	= 0x1,
 	ADDR_LEN_2BYTES	= 0x2,
 	ADDR_LEN_4BYTES	= 0x4
-}; 
+};
 
 struct nrf905_rf_config_register {
 	// byte 0 and 1
@@ -101,11 +101,12 @@ struct nrf905_ctx_t {
 	struct timeout_ctx timer;
 };
 
+#define NRF905_DR	PIN_PTB0
+
 enum {
 	NRF905_TX_EN	= PIN_PTB3,
 	NRF905_PWR_UP	= PIN_PTB2,
 	NRF905_TRX_CE	= PIN_PTB1,
-	NRF905_DR	= PIN_PTB0,
 	NRF905_CSN	= PIN_PTC2,
 	NRF905_SCK	= PIN_PTC5,
 	NRF905_MOSI	= PIN_PTC6,
