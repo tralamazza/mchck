@@ -90,7 +90,7 @@ nrf905_handle_state(void *data)
 		gpio_write(NRF905_TX_EN, 0);
 		break;
 	case NRF905_RX_PAYLOAD:
-		gpio_write(NRF905_TRX_CE, 1);
+		gpio_write(NRF905_TRX_CE, 0);
 		ctx->trans.cmd[0] = R_RX_PAYLOAD;
 		ctx->trans.cmd_len = 1;
 		ctx->trans.tx_data = NULL;
